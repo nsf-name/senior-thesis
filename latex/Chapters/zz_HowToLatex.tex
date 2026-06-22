@@ -1,0 +1,162 @@
+\section{Welcome to the World of LaTeX}
+
+LaTeX is a powerful typesetting system widely used in academia, particularly in fields like mathematics, computer science, and engineering. Unlike word processors that focus on WYSIWYG (What You See Is What You Get), LaTeX operates on a WYSIWYM (What You See Is What You Mean) principle. You write the content and structure of your document, and LaTeX handles the formatting, resulting in beautifully typeset documents.
+
+\subsection{Basic Structure}
+
+A LaTeX document typically begins with a preamble, where you define the document class and load packages. The main content follows within the \texttt{document} environment.
+
+\begin{verbatim}
+\documentclass{article}
+\usepackage{amsmath} % Example package
+
+\begin{document}
+
+% Your content here
+
+\end{document}
+\end{verbatim}
+
+\begin{itemize}
+    \item \texttt{\textbackslash documentclass\{article\}}: Specifies the document type (e.g., article, report, book).
+    \item \texttt{\textbackslash usepackage\{amsmath\}}: Loads the \texttt{amsmath} package for advanced mathematical typesetting.
+    \item \texttt{\textbackslash begin\{document\}} and \texttt{\textbackslash end\{document\}}: Enclose the main content of your document.
+\end{itemize}
+
+Your thesis is written as a book. Also, we've set up the preamble so unless you want to do something weird, you don't need to worry about it. 
+
+
+\subsection{Text and Paragraphs}
+
+To write text, simply type it. LaTeX automatically handles line breaks and paragraph formatting. A blank line creates a new paragraph.
+
+\begin{verbatim}
+This is the first paragraph.
+
+This is the second paragraph.
+\end{verbatim}
+
+This is the first paragraph.
+
+This is the second paragraph.
+
+
+\subsection{Sections and Subsections}
+
+Organizing your document is crucial. LaTeX provides commands for creating sections, subsections, and subsubsections.
+
+\begin{verbatim}
+\section{Introduction}
+\subsection{Background}
+\subsubsection{Previous Work}
+Note: a * between the section keyword and the bracket makes it not numbered. 
+\subsubsection*{Future Work}
+\end{verbatim}
+
+\section{Introduction}
+\subsection{Background}
+\subsubsection{Previous Work}
+\subsubsection*{Future Work}
+
+
+\subsection{References}
+To cite a paper, you will need the reference information to be in the .bib file (bibliography.bib here) and then you do this: 
+\begin{verbatim}
+    \citep{louis2018testing}. If you want to cite more than one, use \citep{louis2018testing, mcnoleg1996integration}. You can also do an in-text citation with \citet{louis2018testing}. 
+\end{verbatim}
+
+That looks like this: 
+\citep{louis2018testing}. If you want to cite more than one, use \citep{louis2018testing, mcnoleg1996integration}. You can also do an in-text citation with \citet{louis2018testing}. 
+
+\subsection{Mathematics}
+
+LaTeX excels at typesetting mathematical equations. Inline math is enclosed in single dollar signs (\texttt{\$...\$}), while displayed equations are enclosed in double dollar signs (\texttt{\$\$...\$\$}) or the \texttt{equation} environment.
+
+\begin{verbatim}
+The Pythagorean theorem is $a^2 + b^2 = c^2$.
+
+\begin{equation}
+    E = mc^2
+\end{equation}
+\end{verbatim}
+
+which looks like this:
+The Pythagorean theorem is $a^2 + b^2 = c^2$.
+
+\begin{equation}
+    E = mc^2
+\end{equation}
+
+\subsection{Lists}
+
+LaTeX offers environments for creating bulleted and numbered lists.
+
+\begin{itemize}
+    \item \texttt{itemize} for bulleted lists.
+    \item \texttt{enumerate} for numbered lists.
+\end{itemize}
+
+\begin{verbatim}
+\begin{itemize}
+    \item Item 1
+    \item Item 2
+\end{itemize}
+
+\begin{enumerate}
+    \item First item
+    \item Second item
+\end{enumerate}
+\end{verbatim}
+
+\subsection{Including Images}
+
+To include images, use the \texttt{graphicx} package and the \texttt{includegraphics} command.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.5\textwidth]{Chapters/Figures/FigureExample.jpeg}
+    \caption{A sample figure caption.}
+    \label{fig:sample}
+\end{figure}
+
+
+\begin{verbatim}
+\usepackage{graphicx} % Already added to preamble
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.5\textwidth]{image.png}
+    \caption{A sample image.}
+    \label{fig:sample}
+\end{figure}
+\end{verbatim}
+
+
+
+\subsection{Tables}
+
+The \texttt{tabular} environment is used to create tables. Note there are tools on the internet that can convert an excel formatted table to a latex one. 
+
+\begin{verbatim}
+\begin{tabular}{|c|c|c|}
+    \hline
+    Header 1 & Header 2 & Header 3 \\
+    \hline
+    Data 1 & Data 2 & Data 3 \\
+    \hline
+\end{tabular}
+\end{verbatim}
+
+\begin{tabular}{|c|c|c|}
+    \hline
+    Header 1 & Header 2 & Header 3 \\
+    \hline
+    Data 1 & Data 2 & Data 3 \\
+    \hline
+\end{tabular}
+
+
+
+
+
+Happy typesetting!
