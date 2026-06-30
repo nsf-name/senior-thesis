@@ -1,0 +1,8 @@
+# latex gitignore
+*.aux
+*.lot
+*.lof
+*.toc
+*.log
+# emacs lisp latex problems
+auto
