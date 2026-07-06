@@ -1,6 +1,6 @@
 import marimo
 
-__generated_with = "0.23.11"
+__generated_with = "0.23.13"
 app = marimo.App(width="medium", app_title="")
 
 
@@ -14,6 +14,7 @@ def _():
     import marimo as mo
     import numpy as np
     # standard library things
+    from glob import glob
     from enum import Enum, auto
     from typing import NamedTuple
     from dataclasses import dataclass, field
@@ -26,13 +27,16 @@ def _():
     from shapely.prepared import prep
     from shapely.ops import unary_union
     import pyproj
+    import cftime
 
     return (
         Enum,
         Point,
         auto,
         ccrs,
+        cftime,
         dataclass,
+        glob,
         mo,
         mpl,
         np,
@@ -43,6 +47,39 @@ def _():
         unary_union,
         xr,
     )
+
+
+@app.cell
+def _(glob, xr):
+    # open all the datasets in one set
+    data = xr.open_mfdataset(sorted(glob("/Users/nsf/Documents/Datasets/icemotion/*.nc")), data_vars='all', combine='by_coords')
+    return (data,)
+
+
+@app.cell
+def _(data):
+    data.time.encoding.get('calendar')
+    return
+
+
+@app.cell
+def _(cftime, data):
+    data.sel(time=slice(cftime.DatetimeJulian(2000,1,1), cftime.DatetimeJulian(2020,1,1)))
+    return
+
+
+@app.cell
+def _(data):
+    # somehow this works?!
+    data.sel(time=slice("2000-01-01", "2020-01-01"))
+    return
+
+
+@app.cell
+def _(data):
+    # number of days in the time period
+    len(data.sel(time=slice("2000-01-01", "2020-01-01")).time)
+    return
 
 
 @app.cell

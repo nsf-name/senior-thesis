@@ -32,5 +32,24 @@ dependencies = [
 dev = [
     "marimo>=0.23.11",
     "pydantic>=2.13.4",
+    "python-lsp-ruff>=2.3.1",
+    "python-lsp-server>=1.14.0",
     "ruff>=0.15.20",
 ]
+
+[tool.pylsp.plugins.pycodestyle]
+#ignore = ["E501"]
+#enabled = false
+
+[tool.pylsp.plugins.mccabe]
+enabled = false
+
+[tool.pylsp.plugins.pyflakes]
+enabled = false
+
+[tool.pylsp.plugins.pylsp_mypy]
+enabled = true
+
+[tool.pylsp.plugins.ruff]
+enabled = true
+lineLength = 100

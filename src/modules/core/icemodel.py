@@ -1,0 +1,121 @@
+import xarray as xr
+import numpy as np
+
+from dataclasses import dataclass
+
+# TODO: we want to represent the bounding coords of our system.
+# it should be impossible to move a buoy outside of the ice, or something like that,
+# so the goal is to have the coordinate system handle this.
+class IceCoordinates:
+    def __init__(self, lat: float, lon: float):
+        # so we only use the getters and setters
+        self._lat = lat
+        self._lon = lon
+
+    @property
+    def lat(self) -> float:
+        return self._lat
+
+    @property
+    def lon(self) -> float:
+        return self._lon
+
+    @lat.setter
+    def lat(self, value):
+        # TODO: enforce checks
+        self._lat = value
+
+    @lon.setter
+    def lon(self, value):
+        # TODO: enforce checks
+        self._lon = value
+
+# TODO: make a class for sea ice data years, with an iter method
+# that always returns the next day's coordinates given a set of
+# starting coordinates. makes the parallel execution very elegant.
+@dataclass
+class IceTrajectory:
+    # in a @dataclass, these are instance vars, not class vars.
+    velocity_field: xr.Dataset
+    start: tuple[float, float]
+    start_day: cftime
+
+    def __post_init__(self):
+        self._pos = self.start
+        self._t = self.start_day
+        self._poslist = []
+
+    # the default one is too verbose
+    def __repr__(self):
+        return self._repr()
+
+    # easier to just have one representation
+    __str__ = __repr__
+
+    def __iter__(self):
+        return self
+
+    def __next__(self) -> tuple[float, float]:
+        # TODO: we may never need more than one year, but if we do,
+        # this is eventually going to be a problem.
+        if self._t >= 365:
+            raise StopIteration
+        #print(f"DAY {self._t + 1}:")
+        vector = self._lookup_vector(self._pos, self._t)
+        self._pos = self._pos + np.array(vector)
+        self._t += 1
+        self._poslist.append(self._pos)
+        return tuple(self._pos)
+
+    def _repr(self):
+        return f"IceTrajectory(start: {self.start}, pos: {self._pos})"
+
+    def _lookup_vector(self, pos, t) -> tuple[float, float]:
+        vector = self.velocity_field.isel(time=t).sel(x=pos[0], y=pos[1], method='nearest')
+        # conversion: (1 cm/s x 86,400 s/day) / 100cm/m = 864 m/day
+        u = np.nan_to_num(vector.u.values.item() * 864)
+        v = np.nan_to_num(vector.v.values.item() * 864)
+        #print(f"vector pulls the object: ({u}, {v})")
+        return (u, v)
+
+    # getter for pos to avoid mutation
+    @property
+    def pos(self):
+        return self._pos
+
+    @property
+    def poslist(self):
+        return self._poslist
+
+    # subclasses should implement this!
+    def plot(self):
+        raise NotImplementedError
+
+# TODO: make a class with methods that represents our buoy,
+# so that we can keep track of its state. we need methods for rendering it,
+# for manipulating it, etc. this probably needs more stuff.
+class Buoy:
+    def __init__(self, icetraj: IceTrajectory, color: str):
+        self._icetraj = icetraj
+        self.color = color
+
+    def __repr__(self):
+        return self._repr()
+
+    # easier to just have one representation
+    __str__ = __repr__
+
+    def _repr(self):
+        return f"Buoy(start: {self._icetraj.start}, pos: {self._icetraj.pos}, color: {self.color})"
+
+    @property
+    def pos(self):
+        return self._icetraj.pos
+
+    # TODO: implement this, depends on getting a scatter plot tool
+    def plot(self):
+        return NotImplementedError
+
+# TODO: then use joblib for MASSIVE parallel execution of stuff.
+# Monte Carlo this. we spawn in millions of possible locations,
+# and let the data speak for itself as to where ice tracks go.
