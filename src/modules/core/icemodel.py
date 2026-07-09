@@ -1,7 +1,14 @@
 import xarray as xr
 import numpy as np
+import cftime
+import geopandas as gpd
+from shapely.geometry import Point
 
 from dataclasses import dataclass
+from datetime import timedelta
+
+from modules.core import utilities
+
 
 # TODO: we want to represent the bounding coords of our system.
 # it should be impossible to move a buoy outside of the ice, or something like that,
@@ -30,6 +37,7 @@ class IceCoordinates:
         # TODO: enforce checks
         self._lon = value
 
+
 # TODO: make a class for sea ice data years, with an iter method
 # that always returns the next day's coordinates given a set of
 # starting coordinates. makes the parallel execution very elegant.
@@ -38,7 +46,9 @@ class IceTrajectory:
     # in a @dataclass, these are instance vars, not class vars.
     velocity_field: xr.Dataset
     start: tuple[float, float]
-    start_day: cftime
+    start_day: cftime.DatetimeJulian
+    end_day: cftime.DatetimeJulian
+    id: int
 
     def __post_init__(self):
         self._pos = self.start
@@ -56,27 +66,45 @@ class IceTrajectory:
         return self
 
     def __next__(self) -> tuple[float, float]:
-        # TODO: we may never need more than one year, but if we do,
-        # this is eventually going to be a problem.
-        if self._t >= 365:
+        if self._t > self.end_day:
             raise StopIteration
-        #print(f"DAY {self._t + 1}:")
+        # our vector dataset contains no entries beyond this,
+        # so iteration beyond this point makes no sense
+        if self._t >= cftime.DatetimeJulian(2025, 1, 1, calendar="julian"):
+            raise StopIteration
+        #print(f"DAY {self._t}:")
         vector = self._lookup_vector(self._pos, self._t)
         self._pos = self._pos + np.array(vector)
-        self._t += 1
-        self._poslist.append(self._pos)
+        self._t += timedelta(days=1)
+        # convert before we use it
+        conv = utilities.meters_to_degrees(self._pos[0], self._pos[1])
+        self._poslist.append(np.array(conv))
+        #print(f"COORDS: {conv}:")
         return tuple(self._pos)
 
     def _repr(self):
-        return f"IceTrajectory(start: {self.start}, pos: {self._pos})"
+        conv = utilities.meters_to_degrees(self._pos[0], self._pos[1])
+        return f"IceTrajectory(id: {self.id}, start: {self.start_day}, end: {self.end_day}, pos: {conv})"
 
     def _lookup_vector(self, pos, t) -> tuple[float, float]:
-        vector = self.velocity_field.isel(time=t).sel(x=pos[0], y=pos[1], method='nearest')
+        vector = self.velocity_field.sel(x=pos[0], y=pos[1], time=t, method="nearest")
         # conversion: (1 cm/s x 86,400 s/day) / 100cm/m = 864 m/day
         u = np.nan_to_num(vector.u.values.item() * 864)
         v = np.nan_to_num(vector.v.values.item() * 864)
-        #print(f"vector pulls the object: ({u}, {v})")
+        # print(f"vector pulls the object: ({u}, {v})")
         return (u, v)
+
+    def export(self):
+        xs, ys = zip(*self._poslist)
+        record = dict(x=xs, y=ys)
+        gpd.GeoDataFrame(
+            # for more types of data, add more entries to this dict
+            {
+                "geometry": gpd.gpd.points_from_xy(
+                    record["x"], record["y"], crs="EPSG:3408"
+                )
+            }
+        ).to_file(f"icetraj_{self.id}.geojson", driver="GeoJSON")
 
     # getter for pos to avoid mutation
     @property
@@ -90,6 +118,7 @@ class IceTrajectory:
     # subclasses should implement this!
     def plot(self):
         raise NotImplementedError
+
 
 # TODO: make a class with methods that represents our buoy,
 # so that we can keep track of its state. we need methods for rendering it,
@@ -115,6 +144,7 @@ class Buoy:
     # TODO: implement this, depends on getting a scatter plot tool
     def plot(self):
         return NotImplementedError
+
 
 # TODO: then use joblib for MASSIVE parallel execution of stuff.
 # Monte Carlo this. we spawn in millions of possible locations,

@@ -1,9 +1,17 @@
 import xarray as xr
 import pyproj
+import datetime
+import cftime
 import cartopy.io.shapereader as shpreader
 from shapely.geometry import Point
 from shapely.prepared import prep
 from shapely.ops import unary_union
+
+def datetime_to_julian(time: datetime.datetime) -> cftime.DatetimeJulian:
+    return cftime.DatetimeJulian(time.year, time.month, time.day)
+
+def julian_to_datetime(time: cftime.DatetimeJulian) -> datetime.datetime:
+    return datetime.datetime(test.year, test.month, test.day)
 
 # TODO: not sure if these functions actually make more sense as
 # a method on IceCoordinates or something like that.

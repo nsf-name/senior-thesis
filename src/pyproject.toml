@@ -5,26 +5,33 @@ description = "Code for my senior thesis"
 readme = "README.md"
 requires-python = ">=3.13,<=3.14"
 dependencies = [
+    "altair>=6.2.2",
     "basemap-data>=2.0.0",
+    "beautifulsoup4>=4.15.0",
     "cartopy>=0.25.0",
     "cftime>=1.6.5",
     "cytoolz>=1.1.0",
     "dask>=2026.6.0",
     "dask-jobqueue>=0.9.0",
     "geopandas>=1.1.4",
+    "geopy>=2.4.1",
     "geoxarray>=0.2.0",
     "joblib>=1.5.3",
+    "lxml>=6.1.1",
     "matplotlib>=3.10.9",
     "mpi4py>=4.1.2",
     "narwhals>=2.22.1",
     "netcdf4>=1.7.3",
     "numpy>=2.2.6",
     "polar>=0.0.127",
+    "pyarrow>=24.0.0",
     "pyproj>=3.7.1",
     "scikit-image>=0.25.2",
     "scikit-learn>=1.7.2",
     "seaborn>=0.13.2",
     "trio>=0.33.0",
+    "vegafusion>=2.0.3",
+    "vl-convert-python>=1.9.0.post1",
     "xarray>=2025.6.1",
 ]
 
@@ -38,8 +45,7 @@ dev = [
 ]
 
 [tool.pylsp.plugins.pycodestyle]
-#ignore = ["E501"]
-#enabled = false
+ignore = ["E501"]
 
 [tool.pylsp.plugins.mccabe]
 enabled = false
