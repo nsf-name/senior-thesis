@@ -1,6 +1,19 @@
 from concurrent.futures import ProcessPoolExecutor
 import pprint
+import pandas as pd
+from pathlib import Path
 import modules.core.data as dataloader
+
+def dump_sim(buoy_sim: list[BuoyTrajectory, IceTrajectory]) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Dump a buoy simulation into a DataFrame; first is simulated, second is real."""
+    buoy_poslist = buoy_sim[0].poslist
+    buoy_timelist = buoy_sim[0].timlist
+    ice_poslist = buoy_sim[1].poslist
+    ice_timelist = buoy_sim[1].timlist
+    buoy_zipper = [(*pos, t) for pos, t in zip(buoy_poslist, buoy_timelist)]
+    ice_zipper = [(*pos, t) for pos, t in zip(ice_poslist, ice_timelist)]
+    return (pd.DataFrame(buoy_zipper, columns=["lat", "lon", "time"]),
+            pd.DataFrame(ice_zipper, columns=["lat", "lon", "time"]))
 
 def simulator_funmap(item: list) -> tuple[str, list[list]]:
     """Apply the simulator loop over a set of items."""
@@ -9,6 +22,14 @@ def simulator_funmap(item: list) -> tuple[str, list[list]]:
     for u in obj[0]:
         for v in obj[1]:
             pass
+    print(f"saving {key} to disk...")
+    buoyfile = Path(__file__).parent / 'sim-data' / f'{key}_buoy.csv'
+    icefile = Path(__file__).parent / 'sim-data' / f'{key}_ice.csv'
+    buoypd, icepd = dump_sim(obj)
+    with open(buoyfile, 'w') as f:
+        buoypd.to_csv(f)
+    with open(icefile, 'w') as f:
+        icepd.to_csv(f)
     print(f"done with {key}.")
     return (key, [obj[0].poslist, obj[1].poslist])
 

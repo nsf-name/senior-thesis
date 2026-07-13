@@ -74,6 +74,10 @@ class BuoyTrajectory:
     def poslist(self):
         return self._poslist
 
+    @property
+    def timlist(self):
+        return self.date_list
+
     # unlike IceTrajectory, we need to know where we start since we only have
     # a list of dates, and it's expensive to iterate.
     @property

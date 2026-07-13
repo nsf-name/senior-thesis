@@ -29,6 +29,7 @@ dependencies = [
     "scikit-image>=0.25.2",
     "scikit-learn>=1.7.2",
     "seaborn>=0.13.2",
+    "tqdm>=4.68.3",
     "trio>=0.33.0",
     "vegafusion>=2.0.3",
     "vl-convert-python>=1.9.0.post1",

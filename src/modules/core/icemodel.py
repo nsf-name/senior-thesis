@@ -54,6 +54,7 @@ class IceTrajectory:
         self._pos = self.start
         self._t = self.start_day
         self._poslist = []
+        self._timlist = []
 
     # the default one is too verbose
     def __repr__(self):
@@ -78,6 +79,7 @@ class IceTrajectory:
         self._t += timedelta(days=1)
         # convert before we use it
         conv = utilities.meters_to_degrees(self._pos[0], self._pos[1])
+        self._timlist.append(self._t)
         self._poslist.append(np.array(conv))
         #print(f"COORDS: {conv}:")
         return tuple(self._pos)
@@ -115,9 +117,9 @@ class IceTrajectory:
     def poslist(self):
         return self._poslist
 
-    # subclasses should implement this!
-    def plot(self):
-        raise NotImplementedError
+    @property
+    def timlist(self):
+        return self._timlist
 
 
 # TODO: make a class with methods that represents our buoy,
