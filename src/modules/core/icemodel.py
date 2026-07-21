@@ -9,35 +9,6 @@ from datetime import timedelta
 
 from modules.core import utilities
 
-
-# TODO: we want to represent the bounding coords of our system.
-# it should be impossible to move a buoy outside of the ice, or something like that,
-# so the goal is to have the coordinate system handle this.
-class IceCoordinates:
-    def __init__(self, lat: float, lon: float):
-        # so we only use the getters and setters
-        self._lat = lat
-        self._lon = lon
-
-    @property
-    def lat(self) -> float:
-        return self._lat
-
-    @property
-    def lon(self) -> float:
-        return self._lon
-
-    @lat.setter
-    def lat(self, value):
-        # TODO: enforce checks
-        self._lat = value
-
-    @lon.setter
-    def lon(self, value):
-        # TODO: enforce checks
-        self._lon = value
-
-
 # TODO: make a class for sea ice data years, with an iter method
 # that always returns the next day's coordinates given a set of
 # starting coordinates. makes the parallel execution very elegant.
@@ -120,34 +91,3 @@ class IceTrajectory:
     @property
     def timlist(self):
         return self._timlist
-
-
-# TODO: make a class with methods that represents our buoy,
-# so that we can keep track of its state. we need methods for rendering it,
-# for manipulating it, etc. this probably needs more stuff.
-class Buoy:
-    def __init__(self, icetraj: IceTrajectory, color: str):
-        self._icetraj = icetraj
-        self.color = color
-
-    def __repr__(self):
-        return self._repr()
-
-    # easier to just have one representation
-    __str__ = __repr__
-
-    def _repr(self):
-        return f"Buoy(start: {self._icetraj.start}, pos: {self._icetraj.pos}, color: {self.color})"
-
-    @property
-    def pos(self):
-        return self._icetraj.pos
-
-    # TODO: implement this, depends on getting a scatter plot tool
-    def plot(self):
-        return NotImplementedError
-
-
-# TODO: then use joblib for MASSIVE parallel execution of stuff.
-# Monte Carlo this. we spawn in millions of possible locations,
-# and let the data speak for itself as to where ice tracks go.

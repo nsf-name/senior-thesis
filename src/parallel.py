@@ -1,11 +1,12 @@
 import pprint
 import time
-import pandas as pd
+import os
 from pathlib import Path
 
+import pandas as pd
+from termcolor import colored
+from rich.console import Console
 from concurrent.futures import ProcessPoolExecutor
-from viztracer import VizTracer
-from tqdm.contrib.concurrent import process_map
 
 import modules.core.data as dataloader
 
@@ -20,6 +21,7 @@ def dump_sim(buoy_sim: list[BuoyTrajectory, IceTrajectory]) -> tuple[pd.DataFram
 
 def simulator_funmap(item: list) -> tuple[str, list[list]]:
     """Apply the simulator loop over a set of items."""
+    start = time.perf_counter()
     key, obj = item
     #print(f"processing {key}...")
     for u in obj[0]:
@@ -29,28 +31,32 @@ def simulator_funmap(item: list) -> tuple[str, list[list]]:
     buoyfile = Path(__file__).parent / 'sim-data' / f'{key}_buoy.csv'
     icefile = Path(__file__).parent / 'sim-data' / f'{key}_ice.csv'
     buoypd, icepd = dump_sim(obj)
+    # TODO: this is so slow that I'm tempted to use polars for just this
     with open(buoyfile, 'w') as f:
         buoypd.to_csv(f)
     with open(icefile, 'w') as f:
         icepd.to_csv(f)
     #print(f"done with {key}.")
+    elapsed = time.perf_counter() - start
+    print(f"[{colored(" OK ", "green", ["bold", "underline"])}] {key}: {elapsed:.2f}s")
     return (key, [obj[0].poslist, obj[1].poslist])
 
 if __name__ == "__main__":
+    console = Console()
     start = time.perf_counter()
-    print("SIM: loading, please be patient...")
+    print(f"[{colored(" SIM ", "light_grey", ["bold", "underline"])}]: Loading, please be patient...")
     buoy_sims = dataloader.load_sim_data()
-    with VizTracer(output_file="benchmarking.json") as tracer:
-        print("SIM: running simulator in parallel...")
-        with ProcessPoolExecutor() as ex:
-            results = dict(process_map(simulator_funmap, buoy_sims.items(),
-                                       chunksize=1, smoothing=0.1))
-            print("SIM: done running simulations in parallel")
-        with open("results.txt", "w") as f:
-            print("SIM: writing results to .txt file")
-            # much faster since we use streaming I/O
-            PP = pprint.PrettyPrinter(indent=4, stream=f)
-            PP.pprint(results)
-    print("SIM: done! probably nothing broke...")
-    print(f"Elapsed: {time.perf_counter() - start:.2f}s")
+    print(f"[{colored(" SIM ", "light_grey", ["bold", "underline"])}]: Running simulator in parallel...")
+    # the default is not fine because I/O overhead is dominated by context switch,
+    # so we actually want to keep the pool overscheduled.
+    with ProcessPoolExecutor(max_workers=os.cpu_count() * 2) as ex:
+        results = dict(ex.map(simulator_funmap, buoy_sims.items(), chunksize=1))
+        print(f"[{colored(" SIM ", "light_grey", ["bold", "underline"])}]: Done running simulations in parallel.")
+    with open("results.txt", "w") as f:
+        print(f"[{colored(" SIM ", "light_grey", ["bold", "underline"])}]: Writing results to .txt file")
+        # much faster since we use streaming I/O
+        PP = pprint.PrettyPrinter(indent=4, stream=f)
+        PP.pprint(results)
+    print(f"[{colored(" SIM ", "light_grey", ["bold", "underline"])}]: Done writing! All runs complete.")
+    print(f"Elapsed: {colored(f"{time.perf_counter() - start:.2f}", "green", ["bold"])}s")
 

@@ -75,11 +75,12 @@ def plot_quickpoints(ax: plt.Axes, points: list, **kwargs) -> plt.Axes:
 def plot_quickline(ax: plt.Axes, points: list, **kwargs) -> plt.Axes:
     """Plot a line from a series of points."""
     xs, ys = zip(*points)
+    pc = ccrs.PlateCarree()
     # special markers for the start and end
-    ax.scatter(points[0][0], points[0][1], c="g")
-    ax.scatter(points[-1][0], points[-1][1], c="r")
+    ax.scatter(points[0][0], points[0][1], c="g", transform=pc, zorder=5)
+    ax.scatter(points[-1][0], points[-1][1], c="r", transform=pc, zorder=5)
     # special marker for the North Pole
     # TODO: only plot this as needed, or split off
-    ax.scatter(0, 0, marker="*", c="gold")
-    ax.plot(xs, ys, **kwargs)
+    #ax.scatter(0, 0, marker="*", c="gold")
+    ax.plot(xs, ys, transform=pc, **kwargs)
     return ax
