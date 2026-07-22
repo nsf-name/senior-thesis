@@ -157,6 +157,109 @@ wheels = [
 ]
 
 [[package]]
+name = "buoysimulator"
+version = "0.1.0"
+source = { virtual = "." }
+dependencies = [
+    { name = "altair" },
+    { name = "basemap-data" },
+    { name = "beautifulsoup4" },
+    { name = "cartopy" },
+    { name = "cftime" },
+    { name = "cytoolz" },
+    { name = "dask" },
+    { name = "dask-jobqueue" },
+    { name = "geopandas" },
+    { name = "geopy" },
+    { name = "geoxarray" },
+    { name = "h5netcdf" },
+    { name = "h5py" },
+    { name = "haversine" },
+    { name = "joblib" },
+    { name = "lxml" },
+    { name = "matplotlib" },
+    { name = "modules" },
+    { name = "mpi4py" },
+    { name = "narwhals" },
+    { name = "netcdf4" },
+    { name = "numba" },
+    { name = "numpy" },
+    { name = "polar" },
+    { name = "pyarrow" },
+    { name = "pyproj" },
+    { name = "rich" },
+    { name = "scikit-image" },
+    { name = "scikit-learn" },
+    { name = "seaborn" },
+    { name = "termcolor" },
+    { name = "tqdm" },
+    { name = "trio" },
+    { name = "vegafusion" },
+    { name = "viztracer" },
+    { name = "vl-convert-python" },
+    { name = "xarray" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "marimo" },
+    { name = "pydantic" },
+    { name = "python-lsp-ruff" },
+    { name = "python-lsp-server" },
+    { name = "ruff" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "altair", specifier = ">=6.2.2" },
+    { name = "basemap-data", specifier = ">=2.0.0" },
+    { name = "beautifulsoup4", specifier = ">=4.15.0" },
+    { name = "cartopy", specifier = ">=0.25.0" },
+    { name = "cftime", specifier = ">=1.6.5" },
+    { name = "cytoolz", specifier = ">=1.1.0" },
+    { name = "dask", specifier = ">=2026.6.0" },
+    { name = "dask-jobqueue", specifier = ">=0.9.0" },
+    { name = "geopandas", specifier = ">=1.1.4" },
+    { name = "geopy", specifier = ">=2.4.1" },
+    { name = "geoxarray", specifier = ">=0.2.0" },
+    { name = "h5netcdf", specifier = ">=1.8.1" },
+    { name = "h5py", specifier = ">=3.16.0" },
+    { name = "haversine", specifier = ">=2.9.0" },
+    { name = "joblib", specifier = ">=1.5.3" },
+    { name = "lxml", specifier = ">=6.1.1" },
+    { name = "matplotlib", specifier = ">=3.10.9" },
+    { name = "modules", specifier = ">=1.0.0" },
+    { name = "mpi4py", specifier = ">=4.1.2" },
+    { name = "narwhals", specifier = ">=2.22.1" },
+    { name = "netcdf4", specifier = ">=1.7.3" },
+    { name = "numba", specifier = ">=0.66.0" },
+    { name = "numpy", specifier = ">=2.2.6" },
+    { name = "polar", specifier = ">=0.0.127" },
+    { name = "pyarrow", specifier = ">=24.0.0" },
+    { name = "pyproj", specifier = ">=3.7.1" },
+    { name = "rich", specifier = ">=15.0.0" },
+    { name = "scikit-image", specifier = ">=0.25.2" },
+    { name = "scikit-learn", specifier = ">=1.7.2" },
+    { name = "seaborn", specifier = ">=0.13.2" },
+    { name = "termcolor", specifier = ">=3.3.0" },
+    { name = "tqdm", specifier = ">=4.68.3" },
+    { name = "trio", specifier = ">=0.33.0" },
+    { name = "vegafusion", specifier = ">=2.0.3" },
+    { name = "viztracer", specifier = ">=1.1.1" },
+    { name = "vl-convert-python", specifier = ">=1.9.0.post1" },
+    { name = "xarray", specifier = ">=2025.6.1" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "marimo", specifier = ">=0.23.11" },
+    { name = "pydantic", specifier = ">=2.13.4" },
+    { name = "python-lsp-ruff", specifier = ">=2.3.1" },
+    { name = "python-lsp-server", specifier = ">=1.14.0" },
+    { name = "ruff", specifier = ">=0.15.20" },
+]
+
+[[package]]
 name = "cartopy"
 version = "0.25.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1270,6 +1373,12 @@ wheels = [
 ]
 
 [[package]]
+name = "modules"
+version = "1.0.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/4b/95/2f306ff2299ed8d44fbabac4c0b193628c4c65398ed59af2db66b6f52632/modules-1.0.0.tar.gz", hash = "sha256:5146b31b76e9899f95c19e3654c6aee2799694b912ca00faec6798725486934b", size = 525, upload-time = "2013-06-11T07:22:23.267Z" }
+
+[[package]]
 name = "mpi4py"
 version = "4.1.2"
 source = { registry = "https://pypi.org/simple" }
@@ -1442,107 +1551,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/74/a1/b3b4adf15585a5bc4c357adde150c01ebeeb642173ded4d871e89468767c/nltk-3.9.4.tar.gz", hash = "sha256:ed03bc098a40481310320808b2db712d95d13ca65b27372f8a403949c8b523d0", size = 2946864, upload-time = "2026-03-24T06:13:40.641Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/9d/91/04e965f8e717ba0ab4bdca5c112deeab11c9e750d94c4d4602f050295d39/nltk-3.9.4-py3-none-any.whl", hash = "sha256:f2fa301c3a12718ce4a0e9305c5675299da5ad9e26068218b69d692fda84828f", size = 1552087, upload-time = "2026-03-24T06:13:38.47Z" },
-]
-
-[[package]]
-name = "nsf-senior-thesis"
-version = "0.1.0"
-source = { virtual = "." }
-dependencies = [
-    { name = "altair" },
-    { name = "basemap-data" },
-    { name = "beautifulsoup4" },
-    { name = "cartopy" },
-    { name = "cftime" },
-    { name = "cytoolz" },
-    { name = "dask" },
-    { name = "dask-jobqueue" },
-    { name = "geopandas" },
-    { name = "geopy" },
-    { name = "geoxarray" },
-    { name = "h5netcdf" },
-    { name = "h5py" },
-    { name = "haversine" },
-    { name = "joblib" },
-    { name = "lxml" },
-    { name = "matplotlib" },
-    { name = "mpi4py" },
-    { name = "narwhals" },
-    { name = "netcdf4" },
-    { name = "numba" },
-    { name = "numpy" },
-    { name = "polar" },
-    { name = "pyarrow" },
-    { name = "pyproj" },
-    { name = "rich" },
-    { name = "scikit-image" },
-    { name = "scikit-learn" },
-    { name = "seaborn" },
-    { name = "termcolor" },
-    { name = "tqdm" },
-    { name = "trio" },
-    { name = "vegafusion" },
-    { name = "viztracer" },
-    { name = "vl-convert-python" },
-    { name = "xarray" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "marimo" },
-    { name = "pydantic" },
-    { name = "python-lsp-ruff" },
-    { name = "python-lsp-server" },
-    { name = "ruff" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "altair", specifier = ">=6.2.2" },
-    { name = "basemap-data", specifier = ">=2.0.0" },
-    { name = "beautifulsoup4", specifier = ">=4.15.0" },
-    { name = "cartopy", specifier = ">=0.25.0" },
-    { name = "cftime", specifier = ">=1.6.5" },
-    { name = "cytoolz", specifier = ">=1.1.0" },
-    { name = "dask", specifier = ">=2026.6.0" },
-    { name = "dask-jobqueue", specifier = ">=0.9.0" },
-    { name = "geopandas", specifier = ">=1.1.4" },
-    { name = "geopy", specifier = ">=2.4.1" },
-    { name = "geoxarray", specifier = ">=0.2.0" },
-    { name = "h5netcdf", specifier = ">=1.8.1" },
-    { name = "h5py", specifier = ">=3.16.0" },
-    { name = "haversine", specifier = ">=2.9.0" },
-    { name = "joblib", specifier = ">=1.5.3" },
-    { name = "lxml", specifier = ">=6.1.1" },
-    { name = "matplotlib", specifier = ">=3.10.9" },
-    { name = "mpi4py", specifier = ">=4.1.2" },
-    { name = "narwhals", specifier = ">=2.22.1" },
-    { name = "netcdf4", specifier = ">=1.7.3" },
-    { name = "numba", specifier = ">=0.66.0" },
-    { name = "numpy", specifier = ">=2.2.6" },
-    { name = "polar", specifier = ">=0.0.127" },
-    { name = "pyarrow", specifier = ">=24.0.0" },
-    { name = "pyproj", specifier = ">=3.7.1" },
-    { name = "rich", specifier = ">=15.0.0" },
-    { name = "scikit-image", specifier = ">=0.25.2" },
-    { name = "scikit-learn", specifier = ">=1.7.2" },
-    { name = "seaborn", specifier = ">=0.13.2" },
-    { name = "termcolor", specifier = ">=3.3.0" },
-    { name = "tqdm", specifier = ">=4.68.3" },
-    { name = "trio", specifier = ">=0.33.0" },
-    { name = "vegafusion", specifier = ">=2.0.3" },
-    { name = "viztracer", specifier = ">=1.1.1" },
-    { name = "vl-convert-python", specifier = ">=1.9.0.post1" },
-    { name = "xarray", specifier = ">=2025.6.1" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "marimo", specifier = ">=0.23.11" },
-    { name = "pydantic", specifier = ">=2.13.4" },
-    { name = "python-lsp-ruff", specifier = ">=2.3.1" },
-    { name = "python-lsp-server", specifier = ">=1.14.0" },
-    { name = "ruff", specifier = ">=0.15.20" },
 ]
 
 [[package]]

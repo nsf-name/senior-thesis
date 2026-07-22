@@ -1,37 +1,35 @@
 import xarray as xr
 import pyproj
 import datetime
-import cftime
 import cartopy.io.shapereader as shpreader
 from shapely.geometry import Point
 from shapely.prepared import prep
 from shapely.ops import unary_union
 
-def datetime_to_julian(time: datetime.datetime) -> cftime.DatetimeJulian:
-    return cftime.DatetimeJulian(time.year, time.month, time.day)
+from enum import Enum, auto
 
-def julian_to_datetime(time: cftime.DatetimeJulian) -> datetime.datetime:
-    return datetime.datetime(test.year, test.month, test.day)
+class DataExportType(Enum):
+    """Valid simulator data export types."""
+    CSV = auto()
+    GEOJSON = auto()
+    # TODO: go back and implement later, might be useful
+    NETCDF = auto()
 
-# TODO: not sure if these functions actually make more sense as
-# a method on IceCoordinates or something like that.
-# requires meditation on the OOP-y ness of this problem.
+class UnpreparedSimulatorError(Exception):
+    def __init__(self, message):            
+        super().__init__(message)
 
-# TODO: make this a lookup table
+class UnfinishedSimulatorError(Exception):
+    def __init__(self, message):            
+        super().__init__(message)
 
-# this is expensive, which is why it's a global object
-_fwd = pyproj.Transformer.from_crs("EPSG:3408", "EPSG:4326", always_xy=True)
-_inv = pyproj.Transformer.from_crs("EPSG:4326", "EPSG:3408", always_xy=True)
+class MissingDatesError(Exception):
+    def __init__(self, message):            
+        super().__init__(message)
 
-def meters_to_degrees(x: float, y: float) -> tuple[float, float]:
-    """Convert EPSG:3408 meters into degrees in WGS84."""
-    lon, lat = _fwd.transform(x, y)
-    return (lat, lon)
-
-def degrees_to_meters(lat: float, lon: float) -> tuple[float, float]:
-    """Convert WGS84 degrees into meters in EPSG:3408."""
-    x, y = _inv.transform(lon, lat)
-    return (x, y)
+def maybe_apply(pred: bool, func: Callable[[], T]) -> T | None:
+    """Evaluate func if pred is True else None."""
+    return func() if pred else None
 
 # this is a cheap function since it's just indexing
 def nearest_grid_point(ds: xr.Dataset, x: float, y: float) -> tuple[float, float]:

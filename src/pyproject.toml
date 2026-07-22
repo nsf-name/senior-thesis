@@ -1,7 +1,7 @@
 [project]
-name = "nsf-senior-thesis"
+name = "buoysimulator"
 version = "0.1.0"
-description = "Code for my senior thesis"
+description = "Buoy simulator code"
 readme = "README.md"
 requires-python = ">=3.13,<=3.14"
 dependencies = [
@@ -22,6 +22,7 @@ dependencies = [
     "joblib>=1.5.3",
     "lxml>=6.1.1",
     "matplotlib>=3.10.9",
+    "modules>=1.0.0",
     "mpi4py>=4.1.2",
     "narwhals>=2.22.1",
     "netcdf4>=1.7.3",
@@ -43,6 +44,17 @@ dependencies = [
     "xarray>=2025.6.1",
 ]
 
+[project.scripts]
+simulator = "simulator.main:main"
+
+[tool.setuptools]
+packages = [
+    "simulator",
+    "simlib",
+    "simlib.core",
+    "simlib.tools"
+]
+
 [dependency-groups]
 dev = [
     "marimo>=0.23.11",
@@ -51,19 +63,3 @@ dev = [
     "python-lsp-server>=1.14.0",
     "ruff>=0.15.20",
 ]
-
-[tool.pylsp.plugins.pycodestyle]
-ignore = ["E501"]
-
-[tool.pylsp.plugins.mccabe]
-enabled = false
-
-[tool.pylsp.plugins.pyflakes]
-enabled = false
-
-[tool.pylsp.plugins.pylsp_mypy]
-enabled = true
-
-[tool.pylsp.plugins.ruff]
-enabled = true
-lineLength = 100
