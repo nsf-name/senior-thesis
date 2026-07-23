@@ -1,13 +1,13 @@
-import xarray as xr
-import pandas as pd
-import numpy as np
-import cartopy.crs as ccrs
-import cartopy
-from glob import glob
-from typing import Callable
-import datetime
-from dataclasses import dataclass, InitVar, field
+from dataclasses import dataclass
+from typing import Callable, Optional
+from pathlib import Path
 
+import cartopy.crs as ccrs
+import numpy as np
+import pandas as pd
+import xarray as xr
+
+from simlib.core import BuoyTrajectory, IceTrajectory
 from simlib.tools import *
 
 @dataclass(repr=False)
@@ -44,7 +44,7 @@ class Simulator():
         maybe_apply(self.verbose, lambda: print("[ INIT ] Done with initialization."))
 
     @staticmethod
-    def plot_sim(key: str, path: Path, simpair: list[BuoyTrajectory, IceTrajectory]):
+    def plot_sim(key: str, path: Path, simpair: tuple[BuoyTrajectory, IceTrajectory]):
         """Save an image of the two simulators to disk."""
         buoysim, icesim = simpair
         plotbase, plotthing = plotting.plot_basemap(title=f"Sim No. {key}", 
@@ -54,7 +54,7 @@ class Simulator():
         plotbase.savefig(path)
 
     @staticmethod
-    def dump_sim(simpair: list[BuoyTrajectory, IceTrajectory]) -> tuple[pd.DataFrame, pd.DataFrame]:
+    def dump_sim(simpair: tuple[BuoyTrajectory, IceTrajectory]) -> tuple[pd.DataFrame, pd.DataFrame]:
         """Dump a pair of simulators into a DataFrame."""
         buoy_poslist, buoy_timelist = simpair[0].poslist, simpair[0].timelist 
         ice_poslist, ice_timelist = simpair[1].poslist, simpair[1].timelist 

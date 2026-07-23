@@ -1,18 +1,16 @@
-import xarray as xr
+from dataclasses import dataclass, field
+from datetime import datetime
+from typing import Optional
+
+import haversine
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import geopandas as gpd
 import pyproj
-import haversine
-from shapely.geometry import Point
-
-from dataclasses import dataclass, InitVar, field
-from pathlib import Path
-from typing import Optional, Callable
-from datetime import datetime, timedelta
 
 from simlib.core import Trajectory
 from simlib.tools import *
+from simlib.tools.utilities import MissingDatesError
 
 # IceTrajectory is special in that it needs a starting set of coordinates...
 # need to catch the bug where that isn't right.
@@ -82,7 +80,7 @@ class IceTrajectory(Trajectory):
         maybe_apply(self.verbose, lambda: print(f"COORDS: {self._pos}"))
         return tuple(self._pos)
 
-    def _lookup_vector(self, xy, t) -> np.array:
+    def _lookup_vector(self, xy, t) -> np.ndarray:
         vector = self.dataset.sel(x=xy[0], y=xy[1], time=t, method="nearest")
         # conversion: (1 cm/s x 86,400 s/day) / 100cm/m = 864 m/day
         u = np.nan_to_num(vector.u.values.item() * 864)
@@ -92,14 +90,14 @@ class IceTrajectory(Trajectory):
 
     # TODO: these _conv methods probably should be static, but I can't be bothered to fix it atp
 
-    def _conv_latlon(self, xy, t) -> np.array:
+    def _conv_latlon(self, xy, t) -> np.ndarray:
         latlon = self.dataset.sel(x=xy[0], y=xy[1], time=t, method="nearest")
         lat = latlon.latitude.values.item()
         lon = latlon.longitude.values.item()
         maybe_apply(self.verbose, lambda: print(f"LOOKUP: ({xy[0]},{xy[1]}) [x,y] is ({lat},{lon}) in [lat,lon]"))
         return np.array([lat,lon])
 
-    def _conv_xy(self, latlon) -> np.array:
+    def _conv_xy(self, latlon) -> np.ndarray:
         x, y = self._inv.transform(latlon[0], latlon[1])
         maybe_apply(self.verbose, lambda: print(f"LOOKUP: ({latlon[0]},{latlon[1]}) [lat,lon] is ({x},{y}) in [x,y]"))
         return np.array([x,y])

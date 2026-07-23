@@ -3,7 +3,7 @@ import logging
 import warnings
 import matplotlib as mpl
 # TODO: to prevent OOM situation, we need to .close() plots
-
+# TODO: this is a massive kludge
 # for noninteractive use
 mpl.use('Agg')
 # make the logs less annoying
@@ -13,8 +13,6 @@ warnings.filterwarnings('ignore', module='cartopy')
 
 # now we can import the rest
 import matplotlib.pyplot as plt
-import matplotlib.ticker as mticker
-
 import cartopy.crs as ccrs
 import cartopy
 
@@ -33,7 +31,7 @@ def plot_basemap(title: str,
                  subtitle: str, 
                  figsize: float = 8.0,
                  data_bounds: tuple[float, float, float, float] = None
-                ) -> (plt.Plot, plt.Axes):
+                ) -> tuple[plt.Plot, plt.Axes]:
     """Plot a base Arctic basemap that can then be mutated as needed."""
     # this is equivalent to EPSG:3408, I think
     # some bug exists in CartoPy's CRS rep where EPSG pole stuff is fucked

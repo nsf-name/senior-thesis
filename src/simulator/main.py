@@ -1,7 +1,6 @@
-import sys
 import argparse
-import pathlib
 from dataclasses import dataclass
+import pathlib
 
 @dataclass()
 class SimulatorPrefs:

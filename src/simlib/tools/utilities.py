@@ -1,12 +1,12 @@
-import xarray as xr
-import pyproj
-import datetime
-import cartopy.io.shapereader as shpreader
-from shapely.geometry import Point
-from shapely.prepared import prep
-from shapely.ops import unary_union
-
 from enum import Enum, auto
+from typing import Callable
+
+import cartopy.io.shapereader as shpreader
+import pyproj
+from shapely.geometry import Point
+from shapely.ops import unary_union
+from shapely.prepared import prep
+import xarray as xr
 
 class DataExportType(Enum):
     """Valid simulator data export types."""

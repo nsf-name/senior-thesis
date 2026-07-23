@@ -1,11 +1,11 @@
-import xarray as xr
-import numpy as np
-import geopandas as gpd
-
-from dataclasses import dataclass, InitVar, field
-from pathlib import Path
-from typing import Optional, Callable
+from dataclasses import InitVar, dataclass, field
 from datetime import datetime, timedelta
+from pathlib import Path
+from typing import Optional
+
+import geopandas as gpd
+import numpy as np
+import xarray as xr
 
 from simlib.tools import *
 

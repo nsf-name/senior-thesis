@@ -1,8 +1,7 @@
-import xarray as xr
-import pandas as pd
-
-from glob import glob
 from enum import Enum, auto
+from glob import glob
+
+import xarray as xr
 
 # TODO: make it reproducible. this is all so grotesquely specific to my machine...
 

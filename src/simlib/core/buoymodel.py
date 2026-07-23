@@ -1,14 +1,10 @@
-import xarray as xr
+from dataclasses import dataclass
+from datetime import datetime
+
+import haversine
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import geopandas as gpd
-import haversine
-from shapely.geometry import Point
-
-from dataclasses import dataclass, InitVar, field
-from pathlib import Path
-from typing import Optional, Callable
-from datetime import datetime, timedelta
 
 from simlib.core import Trajectory
 from simlib.tools import *
