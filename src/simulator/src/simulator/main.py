@@ -1,19 +1,10 @@
 import argparse
-from dataclasses import dataclass
 import pathlib
 
-@dataclass()
-class SimulatorPrefs:
-    out_path: pathlib.Path
+# TODO: this works. but we can do better. 
+from simulator.runner import run_simulation
 
-def run_simulation(args):
-    print("""
-    They say science is done on the shoulders of giants.
-    Not here; at Aperture we do all our science from scratch. No hand-holding. 
-    """)
-    if args.verbose:
-        print("And we're also very verbose.")
-    print(args.directory)
+# TODO: rewrite parallel.py to take in the argparse arguments.
 
 def main():    
     parser = argparse.ArgumentParser(

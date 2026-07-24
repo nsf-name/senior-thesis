@@ -1,0 +1,18 @@
+[project]
+name = "simulator"
+version = "0.1.0"
+description = "Lagrangian buoy simulator"
+dependencies = ["simlib"]
+
+[project.scripts]
+simulator = "simulator.main:main"
+
+[tool.uv.sources]
+simlib = { workspace = true }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"

@@ -4,6 +4,7 @@ import tempfile
 from pathlib import Path
 
 def fetch_data_urls(index_url: str, base_url: str) -> list[str]:
+    """Find all buoy data from the IABP website."""
     with urllib.request.urlopen(index_url) as resp:
         text = resp.read().decode()
     #print("scrape-buoy: done decoding")
@@ -14,6 +15,7 @@ def fetch_data_urls(index_url: str, base_url: str) -> list[str]:
     ]
 
 def download_all(urls: list[str], dest: Path) -> None:
+    """Download all data by ID from the IABP website."""
     #print("scrape-buoy: starting download")
     with tempfile.TemporaryDirectory() as tmp:
         tmp_path = Path(tmp)
@@ -32,7 +34,7 @@ def download_all(urls: list[str], dest: Path) -> None:
     #print("scrape-buoy: all files downloaded!")
 
 def fetch_buoy() -> None:
-    # TODO: set up and finish this
+    """Fetch all raw buoy data from the IABP website."""
     pass
     # they might change this, which is why it's a function
     # urls = fetch_data_urls(

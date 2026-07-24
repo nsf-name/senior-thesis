@@ -15,7 +15,7 @@ uv run simulator run
 This will start the parallel executor, which runs all the buoys in a thread pool. You are encouraged to tweak the exact setup to your needs. For help, run `uv run simulator --help`; you can use the `-h` or `--help` flag on any subcommand.
 
 ## Performance?
-Pretty good. The major hangup has to do with seeks back into the netCDF, so if you see slowdown, consider compressing the dataset. 
+Pretty good. I had initially considered [Parcels](https://docs.parcels-code.org/en/latest/) for this, but it had way too much overhead and complexity for my needs, so I'm rolling my own. This is way faster, although I didn't get far into my Parcels kernel-building to see for myself.  
 
 Internally, the workload is executed per-key in the dictionary. It's mostly `IceTrajectory` that is slow because it actually has to do math. It can take a really long time on long runs, but assuming you set up the dataset cleanly, this should almost never happen. Most jobs should complete all non-plotting tasks within a couple of seconds.
 

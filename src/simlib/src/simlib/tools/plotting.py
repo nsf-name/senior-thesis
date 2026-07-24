@@ -1,6 +1,7 @@
 import xarray as xr
 import logging
 import warnings
+# TODO: this is super slow and even more of a kludge than I thought
 import matplotlib as mpl
 # TODO: to prevent OOM situation, we need to .close() plots
 # TODO: this is a massive kludge
@@ -17,6 +18,7 @@ import cartopy.crs as ccrs
 import cartopy
 
 from enum import Enum, auto
+from typing import Optional
 
 # set default dpi globally
 mpl.rcParams["figure.dpi"] = 800
@@ -30,7 +32,7 @@ class MapType(Enum):
 def plot_basemap(title: str, 
                  subtitle: str, 
                  figsize: float = 8.0,
-                 data_bounds: tuple[float, float, float, float] = None
+                 data_bounds: Optional[tuple[float, float, float, float]] = None
                 ) -> tuple[plt.Plot, plt.Axes]:
     """Plot a base Arctic basemap that can then be mutated as needed."""
     # this is equivalent to EPSG:3408, I think
@@ -53,7 +55,7 @@ def plot_basemap(title: str,
     ax.add_feature(cartopy.feature.LAND,  color="#e8e0d5", zorder=1)
     ax.add_feature(cartopy.feature.BORDERS, linewidth=0.4, color="#888888", zorder=2)
 
-    # TODO: gridlines
+    # TODO: gridlines. cartopy doesn't like em
 
     # title, subtitle
     fig.text(

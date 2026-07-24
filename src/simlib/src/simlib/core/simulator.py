@@ -2,13 +2,12 @@ from dataclasses import dataclass
 from typing import Callable, Optional
 from pathlib import Path
 
-import cartopy.crs as ccrs
 import numpy as np
 import pandas as pd
 import xarray as xr
 
 from simlib.core import BuoyTrajectory, IceTrajectory
-from simlib.tools import *
+# TODO: this desperately needs logs
 
 @dataclass(repr=False)
 class Simulator():
@@ -46,6 +45,7 @@ class Simulator():
     @staticmethod
     def plot_sim(key: str, path: Path, simpair: tuple[BuoyTrajectory, IceTrajectory]):
         """Save an image of the two simulators to disk."""
+        import cartopy.crs as ccrs
         buoysim, icesim = simpair
         plotbase, plotthing = plotting.plot_basemap(title=f"Sim No. {key}", 
                                            subtitle=f"{buoysim.start_day}-{buoysim.end_day}")
