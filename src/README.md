@@ -19,7 +19,7 @@ In some [future version of MATLAB](https://www.mathworks.com/support/requirement
 pyenv('Version', ...
       pwd + "/.venv/bin/python", ...
       'ExecutionMode', 'OutOfProcess')
-# try InProcess for better speed
+% try InProcess for better speed
 ```
 This will load the Python interpreter into MATLAB. Then run:
 ```matlab
