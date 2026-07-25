@@ -1,19 +1,19 @@
+from concurrent.futures import ProcessPoolExecutor
+from datetime import datetime
+from functools import partial
+import multiprocessing
+import os
 import pathlib
 import time
-import os
-import multiprocessing
 
-from functools import partial
-from datetime import datetime
-from concurrent.futures import ProcessPoolExecutor
-
+from simlib.core import BuoyTrajectory, IceTrajectory, Simulator
 from simlib.tools.logging import (
     LogLevel,
     conf_interactive_logger,
     conf_manager_logger,
-    conf_worker_logger
+    conf_worker_logger,
 )
-from simlib.core import IceTrajectory, BuoyTrajectory, Simulator
+from tqdm import tqdm
 
 # TODO: redefine the workers when real workload time
 def simulator_worker(
@@ -35,18 +35,24 @@ def create_simpaths(outdir: pathlib.Path) -> pathlib.Path:
     return newpath
 
 def run_simulation(args):
-    mainlog = conf_interactive_logger("main", LogLevel.DEBUG)
+    mainlog = conf_interactive_logger(
+        "mainprocess", LogLevel.DEBUG if args.verbose else LogLevel.INFO
+    )
     init_time = time.perf_counter()
     mainlog.info("Preparing simulation for runtime...")
-    mainlog.info(f"Working path: {pathlib.Path().resolve()}")
-    queue = multiprocessing.Manager().Queue()
+    mainlog.debug(f"Working path: {pathlib.Path().resolve()}")
     output = create_simpaths(args.out_dir)
     mainlog.info(f"Saving to: {output}")
-    listener = conf_manager_logger(queue, output / "workers.log")
+    
+    queue = multiprocessing.Manager().Queue()
+    listener = conf_manager_logger(
+        queue, output / "workers.log", args.verbose
+    )
     listener.start()
+    
     # map can only take one argument, so we need to curry here
     partial_worker = partial(simulator_worker, log_queue=queue)
-    mainlog.info("Preparations complete. Executing...")
+    mainlog.info("Preparations complete. Starting process pool. Executing...")
 
     # TODO: replace this example with the real one.
     randomstuff = dict()
@@ -57,10 +63,14 @@ def run_simulation(args):
     # so we actually want to keep the pool overscheduled.
     with ProcessPoolExecutor() as ex:
         results = dict(
-            ex.map(
-                partial_worker,
-                randomstuff.items(),
-                chunksize=1
+            tqdm(
+                ex.map(
+                    partial_worker,
+                    randomstuff.items(),
+                    chunksize=1
+                ),
+                total=len(randomstuff),
+                disable=args.verbose
             )
         )
 
@@ -68,4 +78,4 @@ def run_simulation(args):
     mainlog.info(f"Simulation complete. Processed {len(results.keys())} items.")
     
     end_time = time.perf_counter()
-    mainlog.info(f"Elapsed: { end_time - init_time:.2f}")
+    mainlog.info(f"Elapsed: { end_time - init_time:.2f}s")

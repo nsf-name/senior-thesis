@@ -46,14 +46,18 @@ def conf_worker_logger(
 
 def conf_manager_logger(
         queue: multiprocessing.Queue,
-        log_path: Path
+        log_path: Path,
+        to_console: bool = False
     ) -> logging.handlers.QueueListener:
     """Get a logger suitable for use in a manager context."""
-    out_handler = logging.StreamHandler()
-    out_handler.setFormatter(_formatter)
     file_handler = logging.FileHandler(log_path)
     file_handler.setFormatter(_formatter)
+    handlers = [file_handler]
+    if to_console:
+        out_handler = logging.StreamHandler()
+        out_handler.setFormatter(_formatter)
+        handlers.append(out_handler)
     return logging.handlers.QueueListener(
-        queue, out_handler, file_handler, respect_handler_level=True
+        queue, *handlers, respect_handler_level=True
     )
     

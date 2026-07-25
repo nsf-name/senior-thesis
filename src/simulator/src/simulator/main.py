@@ -19,7 +19,7 @@ def main():
         epilog="This can be very computationally intensive.")
     run_p.add_argument("-v", "--verbose",
                        help="enable debug messages",
-                       action="store_true")
+                       action="store_true", default=False)
     run_p.add_argument("-o", "--out-dir", metavar="PATH",
                        help="default: ./sim-data/runs",
                        action="store", type=pathlib.Path,
