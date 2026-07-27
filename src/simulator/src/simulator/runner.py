@@ -1,38 +1,74 @@
-from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime
 from functools import partial
+from glob import glob
+from multiprocessing import Pool
 import multiprocessing
 import os
 import pathlib
+from queue import Queue
+import sys
 import time
+from typing import Any
 
-from simlib.core import BuoyTrajectory, IceTrajectory, Simulator
+import polars as pl
+from simlib.core.buoymodel import BuoyTrajectory
+from simlib.core.dataloader import load_ice_data
+from simlib.core.icemodel import IceTrajectory
 from simlib.tools.logging import (
     LogLevel,
     conf_interactive_logger,
     conf_manager_logger,
     conf_worker_logger,
 )
+from simlib.tools.utilities import DataExportType
 from tqdm import tqdm
+import xarray as xr
 
-# TODO: redefine the workers when real workload time
+
 def simulator_worker(
-        item: tuple[int, int],
-        log_queue: multiprocessing.Queue
-    ):
-    key, obj = item
-    log = conf_worker_logger(str(key),
-                             log_queue,
-                             LogLevel.DEBUG)
-    log.debug(f"hello! my number is: {str(obj)}")
-    return (key, obj)
+    buoy_path: pathlib.Path,
+    ice_data: xr.Dataset,
+    write_path: pathlib.Path,
+    log_queue: Queue[Any],
+    log_level: LogLevel,
+):
+    """Spawns a worker to run each simulator."""
 
-def create_simpaths(outdir: pathlib.Path) -> pathlib.Path:
-    """Create the user-specified paths."""
-    pathname = "run_" + datetime.now().strftime("%Y-%m-%d_%H:%M")
+    name = buoy_path.name.rstrip(".csv")
+    log = conf_worker_logger(name, log_queue, LogLevel.DEBUG)
+    log.info(f"Preparing: {name}")
+    data = pl.read_csv(buoy_path).with_columns(pl.col("datetime").str.to_datetime())
+    buoy = BuoyTrajectory(
+        id=name,
+        dataframe=data,
+        logger=log,
+        loglevel=log_level,
+    )
+    log.info(f"Done with loading and preparations. Executing {buoy.filename}...")
+    buoy.export(DataExportType.CSV, write_path / (buoy.filename + ".csv"))
+    log.info("Done exporting buoy, now executing ice simulator...")
+    ice = IceTrajectory(
+        id=name,
+        start_day=buoy.timehead,
+        end_day=buoy.timetail,
+        init_pos=buoy.poshead,
+        loglevel=log_level,
+        logger=log,
+        dataset=ice_data,
+    )
+    ice.runsim()
+    log.info(f"Done running {ice.filename}. Now exporting...")
+    ice.export(DataExportType.CSV, write_path / (ice.filename + ".csv"))
+    log.info(f"Done executing {name}")
+
+
+def create_simpaths(outdir: pathlib.Path, append: str) -> pathlib.Path:
+    """Create the path for holding simulator output; user-defined + append."""
+    pathname = "run_" + append
     newpath = outdir / pathname
     os.makedirs(newpath)
     return newpath
+
 
 def run_simulation(args):
     mainlog = conf_interactive_logger(
@@ -41,41 +77,62 @@ def run_simulation(args):
     init_time = time.perf_counter()
     mainlog.info("Preparing simulation for runtime...")
     mainlog.debug(f"Working path: {pathlib.Path().resolve()}")
-    output = create_simpaths(args.out_dir)
+
+    append = datetime.now().strftime("%Y-%m-%d_%H:%M")
+
+    # Invariant: one run per minute, maximum.
+    if os.path.exists(args.out_dir / ("run_" + append)):
+        mainlog.error("The output directory already has a run for this timestamp.")
+        sys.exit(1)
+
+    output = create_simpaths(args.out_dir, append)
+
     mainlog.info(f"Saving to: {output}")
-    
+
     queue = multiprocessing.Manager().Queue()
-    listener = conf_manager_logger(
-        queue, output / "workers.log", args.verbose
-    )
+    listener = conf_manager_logger(queue, output / "workers.log", args.verbose)
     listener.start()
-    
+
+    # assemble the list of buoys to be simulated with functional magic
+    buoylist = list(
+        map(pathlib.Path, list(sorted(glob(str(args.buoy_data) + "/*.csv"))))
+    )
+
+    # Invariant: there is at least one buoy.
+    if len(buoylist) == 0:
+        mainlog.error("Buoy data directory is missing or empty.")
+        sys.exit(1)
+
+    icedata = load_ice_data()
+
     # map can only take one argument, so we need to curry here
-    partial_worker = partial(simulator_worker, log_queue=queue)
+    partial_worker = partial(
+        simulator_worker,
+        write_path=output,
+        ice_data=icedata,
+        log_queue=queue,
+        log_level=LogLevel.INFO,
+    )
+
+    mainlog.info("Now reading in simulation data, please wait...")
+
+    # TODO: we must give the sims the log handle! right now,
+    # they aren't emitting to the file because they don't have it!
+
     mainlog.info("Preparations complete. Starting process pool. Executing...")
 
-    # TODO: replace this example with the real one.
-    randomstuff = dict()
-    for i in range(0, 100000):
-        randomstuff[i] = i * 2
-    
-    # the default is not fine because I/O overhead is dominated by context switch,
-    # so we actually want to keep the pool overscheduled.
-    with ProcessPoolExecutor() as ex:
-        results = dict(
-            tqdm(
-                ex.map(
-                    partial_worker,
-                    randomstuff.items(),
-                    chunksize=1
-                ),
-                total=len(randomstuff),
-                disable=args.verbose
-            )
-        )
+    # have to use a pool, otherwise macOS complains about too many files open
+    with Pool(processes=12) as pool:
+        # why not ProcessPoolExecutor()? because this is lazy, and faster
+        results = pool.imap_unordered(partial_worker, buoylist, chunksize=1)
+        for _ in tqdm(
+            results, total=len(buoylist), disable=args.verbose, colour="green"
+        ):
+            pass
 
     listener.stop()
-    mainlog.info(f"Simulation complete. Processed {len(results.keys())} items.")
-    
+    mainlog.info(f"Simulation complete. Processed {len(buoylist)} items.")
+
     end_time = time.perf_counter()
-    mainlog.info(f"Elapsed: { end_time - init_time:.2f}s")
+    mainlog.info(f"Elapsed: {end_time - init_time:.2f}s")
+    sys.exit()
