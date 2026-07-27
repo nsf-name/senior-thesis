@@ -1,94 +1,75 @@
 from dataclasses import dataclass
-from typing import Callable, Optional
-from pathlib import Path
+from glob import glob
+import pathlib
+from queue import Queue
+from typing import Optional
+from typing import Any
 
-import numpy as np
-import pandas as pd
-import xarray as xr
-
+import polars as pl
 from simlib.core import BuoyTrajectory, IceTrajectory
-# TODO: this desperately needs logs
+from simlib.tools.logging import LogLevel, conf_interactive_logger, conf_worker_logger
+
 
 @dataclass(repr=False)
-class Simulator():
-    """Holds, creates, manages, and runs simulations."""
-    buoy_data: xr.Dataset
-    ice_data: xr.Dataset
-    verbose: Optional[bool] = False
-    
+class Simulator:
+    """Holds, creates, manages, and runs simulations.
+
+    Attributes:
+        log_queue: Handler to the main log of the runner. If None, creates one.
+        loglevel: The amount of logs to be emitted for sims. If None, uses LogLevel.WARNING.
+        name: Defines a name; suffixed with "Simulator". If None, just uses "Simulator".
+    """
+
+    buoydir: pathlib.Path
+    icedir: pathlib.Path
+    log_queue: Optional[Queue[Any]] = None
+    loglevel: Optional[LogLevel] = None
+    name: Optional[str] = None
+
     def __post_init__(self):
-        maybe_apply(self.verbose, lambda: print("[ INIT ] Starting initialization..."))
-        # this is where the dataset containing date splits is made
-        self._sim_dict = Simulator._split_buoy(self.buoy_data, 
-                                               lambda a, b: (pd.Timestamp(b) - pd.Timestamp(a)) <= pd.Timedelta(days=7))
-        maybe_apply(self.verbose, lambda: print("[ INIT ] Done creating run splits."))
-        # then this one contains a dictionary of the actual simulator objects to run
-        self._obj_dict = dict()
-        maybe_apply(self.verbose, lambda: print("[ INIT ] Starting simulator object creation..."))
-        for key in self._sim_dict:
-            for num in range(len(self._sim_dict[key])):
-                buoy_sim = BuoyTrajectory(dataset=self.buoy_data,
-                                          start_day=self._sim_dict[key][num][0],
-                                          end_day=self._sim_dict[key][num][-1],
-                                          id=key)
-                # peek the FIRST one so we can run in parallel
-                start_pos = buoy_sim.peek
-                ice_sim = IceTrajectory(dataset=self.ice_data,
-                                        start_day=self._sim_dict[key][num][0],
-                                        end_day=self._sim_dict[key][num][-1],
-                                        id=key,
-                                        init_pos=start_pos)
-                maybe_apply(self.verbose, lambda: print(f"[ INIT ] Creating simulators for {key}_{num}..."))
-                self._obj_dict[f"{key}_{num}"] = (buoy_sim, ice_sim)
-        maybe_apply(self.verbose, lambda: print("[ INIT ] Done with initialization."))
+        if self.loglevel is None:
+            self.loglevel = LogLevel.WARNING
 
-    @staticmethod
-    def plot_sim(key: str, path: Path, simpair: tuple[BuoyTrajectory, IceTrajectory]):
-        """Save an image of the two simulators to disk."""
-        import cartopy.crs as ccrs
-        buoysim, icesim = simpair
-        plotbase, plotthing = plotting.plot_basemap(title=f"Sim No. {key}", 
-                                           subtitle=f"{buoysim.start_day}-{buoysim.end_day}")
-        plot = plotting.plot_quickline(plotting.plot_quickline(plotthing, buoysim.poslist), icesim.poslist)
-        plot.set_extent([-180, 180, 65, 90], crs=ccrs.PlateCarree())
-        plotbase.savefig(path)
+        if self.name is None:
+            self.name = "Simulator"
+        else:
+            self.name = self.name + "-Simulator"
 
-    @staticmethod
-    def dump_sim(simpair: tuple[BuoyTrajectory, IceTrajectory]) -> tuple[pd.DataFrame, pd.DataFrame]:
-        """Dump a pair of simulators into a DataFrame."""
-        buoy_poslist, buoy_timelist = simpair[0].poslist, simpair[0].timelist 
-        ice_poslist, ice_timelist = simpair[1].poslist, simpair[1].timelist 
-        buoy_zipper = [(*pos, t) for pos, t in zip(buoy_poslist, buoy_timelist)]
-        ice_zipper = [(*pos, t) for pos, t in zip(ice_poslist, ice_timelist)]
-        return (pd.DataFrame(buoy_zipper, columns=["lat", "lon", "time"]),
-                pd.DataFrame(ice_zipper, columns=["lat", "lon", "time"]))
+        if self.log_queue is None:
+            self._log = conf_interactive_logger(self.name, self.loglevel)
+        else:
+            self._log = conf_worker_logger(self.name, self.log_queue, self.loglevel)
 
-    @staticmethod
-    def _split_runs(items: np.ndarray, pred: Callable) -> list:
-        """pred(prev, curr) -> True if curr continues the run with prev."""
-        if not items.any():
-            return []
-        if len(items) == 1:
-            return [[items[0]]]
-        # this is hard to read but it's vectorized recursion
-        breaks = np.fromiter(
-            (not pred(p, c) for p, c in zip(items[:-1], items[1:])),
-            dtype=bool, count=len(items) - 1
-        )
-        split_points = np.where(breaks)[0] + 1
-        return [list(run) for run in np.split(items, split_points)]
+        self._log.info("Simulator init is complete, now making simulators...")
+        # get cleaned paths for each one
+        buoylist = map(pathlib.Path, list(sorted(glob(str(self.buoydir) + "/*.csv"))))
 
-    @staticmethod
-    def _split_buoy(buoys: xr.Dataset, pred: Callable) -> dict:
-        """Sort all buoys into a dictionary by BuoyID, after calling split_runs(buoys.items, pred) on them."""
-        return {
-            k: Simulator._split_runs(
-        # TODO: dropping dupes here seems fine... I assume the different time results come from the netcdf-ization of this data
-                v.drop_duplicates("index").unstack("index").dropna(dim='time', how='all', subset=['Lat', 'Lon']).time.values, 
-                pred
+        # TODO:
+        # conceptually, the runs aren't that bad. the buoys is just a glob over
+        # the files we were passed in. then the ice files are just loading the netCDF.
+        # of course, what we need to do is just do buoys first. ice comes second.
+        # we also need to finish the plotter. do ice one at a time...
+
+        # now make a dictionary to hold all the runs
+        self._sim_dict = dict()
+
+        for location in buoylist:
+            name = location.name.rstrip(".csv")
+            self._log.debug(f"Creating simulator for {name}...")
+            data = pl.read_csv(location).with_columns(
+                pl.col("datetime").str.to_datetime()
             )
-            for k, v in buoys.groupby('BuoyID')
-        }
+            self._sim_dict[name] = BuoyTrajectory(
+                id=name, dataframe=data, loglevel=self.loglevel
+            )
+
+        self._log.info("Simulator setup complete")
+
+    def plot_sim(self, simpair: tuple[BuoyTrajectory, IceTrajectory]):
+        """Save an image of the two simulators to disk."""
+        raise NotImplementedError
+        # TODO: this is where R will be dropped in
+        # we need to FFI to R in order to do plots, since Cartopy sucks
 
     @property
     def simulators(self) -> list[int]:
@@ -98,10 +79,5 @@ class Simulator():
     def simdict(self) -> dict:
         return self._sim_dict
 
-    @property
-    def objects(self) -> dict:
-        return self._obj_dict
-
-    @property
-    def objdict(self) -> dict:
-        return self._obj_dict
+    # TODO: a method to fetch just ice objects and buoy objects would be cool,
+    # but isn't strictly needed. probably requires zip() trickery which is expensive
