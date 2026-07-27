@@ -78,9 +78,10 @@ def run_simulation(args):
     mainlog.info("Preparing simulation for runtime...")
     mainlog.debug(f"Working path: {pathlib.Path().resolve()}")
 
+    # create our uniquely identifying timestamp for this run.
     append = datetime.now().strftime("%Y-%m-%d_%H:%M")
 
-    # Invariant: one run per minute, maximum.
+    # invariant: one run per minute, maximum.
     if os.path.exists(args.out_dir / ("run_" + append)):
         mainlog.error("The output directory already has a run for this timestamp.")
         sys.exit(1)
@@ -97,7 +98,7 @@ def run_simulation(args):
         map(pathlib.Path, list(sorted(glob(str(args.buoy_data) + "/*.csv"))))
     )
 
-    # Invariant: there is at least one buoy.
+    # invariant: there is at least one buoy.
     if len(buoylist) == 0:
         mainlog.error("Buoy data directory is missing or empty.")
         sys.exit(1)
@@ -130,4 +131,4 @@ def run_simulation(args):
 
     end_time = time.perf_counter()
     mainlog.info(f"Elapsed: {end_time - init_time:.2f}s")
-    sys.exit()
+    sys.exit(0)
