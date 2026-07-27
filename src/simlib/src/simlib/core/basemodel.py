@@ -62,8 +62,8 @@ class Trajectory(ABC):
         """Export the simulator data to the specified type."""
         match type:
             case DataExportType.CSV:
-                lats, lons = zip(*self.poslist)
                 try:
+                    lats, lons = zip(*self.poslist)
                     # TODO: export distlist
                     pl.DataFrame(
                         {

@@ -86,7 +86,6 @@ def run_simulation(args):
         sys.exit(1)
 
     output = create_simpaths(args.out_dir, append)
-
     mainlog.info(f"Saving to: {output}")
 
     queue = multiprocessing.Manager().Queue()
@@ -103,6 +102,7 @@ def run_simulation(args):
         mainlog.error("Buoy data directory is missing or empty.")
         sys.exit(1)
 
+    mainlog.info("Now reading in simulation data, please wait...")
     icedata = load_ice_data()
 
     # map can only take one argument, so we need to curry here
@@ -114,12 +114,7 @@ def run_simulation(args):
         log_level=LogLevel.INFO,
     )
 
-    mainlog.info("Now reading in simulation data, please wait...")
-
-    # TODO: we must give the sims the log handle! right now,
-    # they aren't emitting to the file because they don't have it!
-
-    mainlog.info("Preparations complete. Starting process pool. Executing...")
+    mainlog.info("Preparations complete. Started process pool. Executing...")
 
     # have to use a pool, otherwise macOS complains about too many files open
     with Pool(processes=12) as pool:
