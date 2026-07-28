@@ -126,9 +126,11 @@ def run_simulation(args):
         ):
             pass
 
-    listener.stop()
     mainlog.info(f"Simulation complete. Processed {len(buoylist)} items.")
 
     end_time = time.perf_counter()
     mainlog.info(f"Elapsed: {end_time - init_time:.2f}s")
+
+    # we delay this to allow for queues to drain in the background
+    listener.stop()
     sys.exit(0)

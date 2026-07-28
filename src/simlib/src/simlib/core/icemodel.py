@@ -38,7 +38,15 @@ class IceTrajectory(Trajectory):
 
         # self._pos is our (x,y); self._vec, our (lat,lon)
         self._pos = (self.init_pos[0], self.init_pos[1])
-        self._vec = self._conv_xy((self.init_pos[0], self.init_pos[1]))
+        try:
+            self._vec = self._conv_xy((self._pos[0], self._pos[1]))
+        except Exception as err:
+            self._log.error(f"""
+            ERROR: failed to create simulator, exception: {err}
+            Initial passed values were {self._pos}
+            Treating this simulator as if it were complete.  
+            """)
+            self._end_iter()
 
         # correctly set self._t and self.end_day if undefined
         if not isinstance(self._t, datetime):
