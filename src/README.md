@@ -35,13 +35,6 @@ Internally, the workload is executed per-key in the dictionary. It's mostly `Ice
 When `Simulator` is created, it can take a long time to load all data and construct simulator objects, depending on the speed of your hard drive. I've considered implementing a caching feature to make it easier for debugging and reruns.
 
 ## Bugs?
-Many, unfortunately. So far:
-- Cartopy and other plotting software has a variety of issues with the Arctic for so many reasons. In the future, there will probably be a different plotting mechanism used instead of it (probably done through R, or QGIS). Should be done after the fact.
-- Haversine calculation is sometimes a bit buggy. I am working on making this more reliable, but probably is caused by underlying dataset issues.
-- The classes could be better-designed, and not everything is type-labeled, although this is getting there. 
-- Need support for both the week and daily version of the sea ice vectors dataset to do an adequate comparison on them.
-- There aren't enough high-quality docstrings in my code yet, so it might be a bit difficult to understand.
-- Must swap to using the clean buoy dataset rather than the messy one.
-
+Yes. It's very much a work in progress.
 
 

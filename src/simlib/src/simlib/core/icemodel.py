@@ -97,6 +97,9 @@ class IceTrajectory(Trajectory):
         # invariant: if this fails, something is wrong
         assert isinstance(self._t, datetime)
 
+        # TODO: comment _end_iter() so we know why we ended iteration.
+        # this will help with debugging.
+
         # if we're done, we shouldn't be iterating, so suspend safely.
         if self.consumed:
             raise StopIteration
@@ -118,6 +121,7 @@ class IceTrajectory(Trajectory):
             newvec = self._lookup_vector(self._pos, t=self._t)
 
         # combine our new float correctly, and convert coordinate.
+        # TODO: step through one day manually???
         self._vec = (self._vec[0] + newvec[0], self._vec[1] + newvec[1])
         self._pos = self._conv_latlon(self._vec)
         self._log.debug(f"DIFF: was {newvec}, now {self._vec}")
@@ -175,14 +179,11 @@ class IceTrajectory(Trajectory):
             self._log.debug(f"TIME: stepping {delta * 100}s")
             return (u, v)
 
-    # these conv aren't static because they need the ice data to do lookups
+    # these conv aren't static because they reuse the objects to avoid pyproj
+    # having to recreate them, and to share loggers, too.
 
     def _conv_latlon(self, xy) -> tuple[float, float]:
         """Convert (x,y) to (lat,lon)."""
-        # TODO: probably cut these methods since they're inaccurate
-        # latlon = self.dataset.sel(x=xy[0], y=xy[1], time=t, method="nearest")
-        # lat = latlon.latitude.values.item()
-        # lon = latlon.longitude.values.item()
         lat, lon = self._fwd.transform(xy[0], xy[1])
         self._log.debug(
             f"LOOKUP: ({xy[0]},{xy[1]}) [x,y] is ({lat},{lon}) in [lat,lon]"
