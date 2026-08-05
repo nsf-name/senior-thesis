@@ -28,11 +28,11 @@ This will load the Python interpreter into MATLAB. Then run:
 Now you are ready to access the library. Since there's no MATLAB wrapper, you may find that it's a bit cumbersome to work with, and NumPy types will need conversion. 
 
 ## Performance?
-Pretty good. I had initially considered [Parcels](https://docs.parcels-code.org/en/latest/) for this, but it had way too much overhead and complexity for my needs (this is a 2D problem and Parcels is a 3D simulator), so I'm rolling my own. This is way faster, although I didn't get far into my Parcels kernel-building to see for myself.
+It's between pretty good to middling, depending on the specific simulator you're running. I had initially considered [Parcels](https://docs.parcels-code.org/en/latest/) for this, but it had way too much overhead and complexity for my needs (this is a 2D problem and Parcels is a 3D simulator), so I'm rolling my own. This is way faster, although I didn't get far into my Parcels kernel-building to see for myself. 
 
-Internally, the workload is executed per-key in the dictionary. It's mostly `IceTrajectory` that is slow because it actually has to do math. It can take a really long time on long runs, but assuming you set up the dataset cleanly, this should almost never happen. Most jobs should complete all non-plotting tasks within a couple of seconds.
+Internally, the workload is executed per-key in the dictionary. It's mostly `IceTrajectory` that is slow because it actually has to do math. It can take a really long time on long runs, but assuming you set up the dataset cleanly, this should almost never happen. Most jobs should complete all non-plotting tasks within a couple of seconds. Soon, I am planning on rewriting this core loop into Rust since the Python process overhead is starting to become very expensive.
 
-When `Simulator` is created, it can take a long time to load all data and construct simulator objects, depending on the speed of your hard drive. I've considered implementing a caching feature to make it easier for debugging and reruns.
+It can take a long time to load all data and construct simulator objects, depending on the speed of your hard drive. I've considered implementing a caching feature to make it easier for debugging and reruns.
 
 ## Bugs?
 Yes. It's very much a work in progress.
