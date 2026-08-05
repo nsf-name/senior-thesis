@@ -184,7 +184,11 @@ class IceTrajectory(Trajectory):
 
     def _conv_latlon(self, xy) -> tuple[float, float]:
         """Convert (x,y) to (lat,lon)."""
-        lat, lon = self._fwd.transform(xy[0], xy[1])
+        lat, lon = self._fwd.transform(
+            xy[0],
+            xy[1],
+            always_xy=True,
+        )  # type: ignore [reportCallIssue]
         self._log.debug(
             f"LOOKUP: ({xy[0]},{xy[1]}) [x,y] is ({lat},{lon}) in [lat,lon]"
         )
@@ -192,7 +196,11 @@ class IceTrajectory(Trajectory):
 
     def _conv_xy(self, latlon) -> tuple[float, float]:
         """Convert (lat,lon) to (x,y)."""
-        x, y = self._inv.transform(latlon[0], latlon[1])
+        x, y = self._inv.transform(
+            latlon[0],
+            latlon[1],
+            always_xy=True,
+        )  # type: ignore [reportCallIssue]
         self._log.debug(
             f"LOOKUP: ({latlon[0]},{latlon[1]}) [lat,lon] is ({x},{y}) in [x,y]"
         )
