@@ -33,8 +33,12 @@ class IceTrajectory(Trajectory):
         # expensive, but we do need it, at least for now
         import pyproj
 
-        self._inv = pyproj.Transformer.from_crs("EPSG:4326", "EPSG:3408")
-        self._fwd = pyproj.Transformer.from_crs("EPSG:3408", "EPSG:4326")
+        self._inv = pyproj.Transformer.from_crs(
+            "EPSG:4326", "EPSG:3408", always_xy=True
+        )
+        self._fwd = pyproj.Transformer.from_crs(
+            "EPSG:3408", "EPSG:4326", always_xy=True
+        )
 
         # self._pos is our (x,y); self._vec, our (lat,lon)
         self._pos = (self.init_pos[0], self.init_pos[1])
@@ -187,8 +191,7 @@ class IceTrajectory(Trajectory):
         lat, lon = self._fwd.transform(
             xy[0],
             xy[1],
-            always_xy=True,
-        )  # type: ignore [reportCallIssue]
+        )
         self._log.debug(
             f"LOOKUP: ({xy[0]},{xy[1]}) [x,y] is ({lat},{lon}) in [lat,lon]"
         )
@@ -199,8 +202,7 @@ class IceTrajectory(Trajectory):
         x, y = self._inv.transform(
             latlon[0],
             latlon[1],
-            always_xy=True,
-        )  # type: ignore [reportCallIssue]
+        )
         self._log.debug(
             f"LOOKUP: ({latlon[0]},{latlon[1]}) [lat,lon] is ({x},{y}) in [x,y]"
         )
