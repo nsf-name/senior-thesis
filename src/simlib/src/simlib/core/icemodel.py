@@ -208,6 +208,7 @@ class IceTrajectory(Trajectory):
         )
         return (x, y)
 
+    # TODO: log error if we bail out here
     def _end_iter(self):
         """One-way transition to stopping execution."""
         self._log.debug("SIM TERMINATED")

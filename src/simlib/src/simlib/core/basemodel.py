@@ -27,7 +27,11 @@ class Trajectory(ABC):
         timestep: Duration between simulation steps. If None, iterates through everything.
     """
 
+    # TODO: add a path variable since our worker can make it
+    # it would be nice to have! then we can plot most elegantly.
+
     id: str
+    write_path: Path
     start_day: Optional[datetime] = None
     end_day: Optional[datetime] = None
     pos_list: list[tuple[float, float]] = field(default_factory=list)

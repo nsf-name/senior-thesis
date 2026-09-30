@@ -3,34 +3,27 @@ library(ggplot2)
 library(ggspatial)
 library(rnaturalearth)
 library(rnaturalearthdata)
+library(optparse)
 
-# TODO: when this is a function, we need to change R's working dir
-# to be that of where the CSV data is held.
+option_list <- list(
+  make_option(c("-i", "--input"), type="character", help="input path"),
+  make_option(c("-f", "--file"), type="character", help="simulator name"),
+  make_option(c("-o", "--output"), type="character", help="output path")
+)
+opt <- parse_args(OptionParser(option_list=option_list))
 
-# function signature should probably be something like:
-# function plot_sim(path, id)
-# for single plots, and
-# function plot_sim_all(path)
-# that one will just do all the ones in $path.
-# anything more than that is likely too complex
-
-# so we take in some filename. get "20081228_35238_d-BuoyTrajectory.csv":
-# truename <- str_split_1(string, "-")[1]
-# now we can create our filename:
-# filename <- paste(truename, "-Plot.png", sep="")
-# save to that filename in ggplot!
-
-buoy <- read.csv("test.csv")
+buoy <- read.csv(paste(opt$input, 
+                       sprintf("%s-BuoyTrajectory.csv", opt$file), sep=""))
 buoy_sf <- st_as_sf(buoy, coords=c("lon", "lat"), crs=4326)
 buoy_headtail <- buoy_sf[c(1, nrow(buoy)), ]
 buoy_line <- st_combine(buoy_sf) |> st_cast("LINESTRING")
 
-ice <- read.csv("icy.csv")
+ice <- read.csv(paste(opt$input, 
+                      sprintf("%s-IceTrajectory.csv", opt$file), sep=""))
 ice_sf <- st_as_sf(ice, coords=c("lon", "lat"), crs=4326)
 ice_headtail <- ice_sf[c(1, nrow(ice)), ]
 ice_line <- st_combine(ice_sf) |> st_cast("LINESTRING")
 
-# this could work anywhere but it's just convenient to head it
 name <- buoy[1, ]$id
 start_time <- buoy[1, ]$time
 end_time <- buoy[nrow(buoy), ]$time
@@ -47,7 +40,6 @@ disp_win <- st_sfc(
 disp_win_trans <- st_transform(disp_win, crs=st_crs(3408))
 disp_win_coord <- st_coordinates(disp_win_trans)
 
-# TODO: make this all a function
 ggplot(data=world)+
   geom_sf()+
   geom_sf(data=buoy_line, linewidth=0.8, color = "red")+
@@ -66,3 +58,5 @@ ggplot(data=world)+
            crs = st_crs(3408))+
   theme(panel.background = element_rect(fill="aliceblue"))
 
+ggsave(sprintf("%s/%s.png", opt$output, opt$file),
+       width = 8, height = 8, dpi = 600)
