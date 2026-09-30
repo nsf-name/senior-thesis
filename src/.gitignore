@@ -1,0 +1,9 @@
+# cruft files
+.R*
+# random loose python testing notebooks
+*.py
+# data output
+*.png
+sim-data/
+buoy-data/
+*.csv
