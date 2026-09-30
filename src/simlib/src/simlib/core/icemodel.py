@@ -19,6 +19,9 @@ class IceTrajectory(Trajectory):
         vec_list: Accumulated motion vectors. For external capture.
     """
 
+    # TODO: lots of sus assumptions in this code.
+    # need to contemplate and analyze further.
+
     dataset: xr.Dataset
     init_pos: tuple[float, float]
     vec_list: list[tuple[float, float]] = field(default_factory=list)
@@ -49,7 +52,7 @@ class IceTrajectory(Trajectory):
             Initial passed values were {self._pos}
             Treating this simulator as if it were complete.  
             """)
-            self._end_iter()
+            self._kill_iter("Error at creation-time.")
 
         # correctly set self._t and self.end_day if undefined
         if not isinstance(self._t, datetime):
@@ -78,10 +81,6 @@ class IceTrajectory(Trajectory):
             self._t_index = 0
         self._log.debug("Init complete")
 
-        # TODO: IceTrajectory needs to regroup by pandas time ticks so
-        # that vectors are added correctly, if that is something Alice deems is needed.
-        # or maybe I just add it for fun. who knows?
-
     # TODO: this len() is actually just plainly incorrect
     def __len__(self) -> int:
         if self.pos_list != []:
@@ -100,21 +99,18 @@ class IceTrajectory(Trajectory):
         # invariant: if this fails, something is wrong
         assert isinstance(self._t, datetime)
 
-        # TODO: comment _end_iter() so we know why we ended iteration.
-        # this will help with debugging.
-
         # if we're done, we shouldn't be iterating, so suspend safely.
         if self.consumed:
             raise StopIteration
         # our vector dataset contains no entries beyond this.
         if self._t >= datetime(2025, 1, 1):
-            self._end_iter()
+            self._kill_iter("Impossible starting date.")
         # don't iter beyond our last date, but do include it
         if (self.end_day is not None) and (self._t > self.end_day):
-            self._end_iter()
+            self._kill_iter("Impossible ending date.")
         # if we're rolling with an index-based method: stop iterating at len()
         if (self.timestep is None) and (self._t_index >= len(self._tlen) - 1):
-            self._end_iter()
+            self._kill_iter("Exceeded bounds of timestep indexing.")
 
         self._log.debug(f"TIME: currently {self._t}")
         # if we have no index, call lookup vector appropriately
@@ -207,7 +203,6 @@ class IceTrajectory(Trajectory):
         )
         return (x, y)
 
-    # TODO: log error if we bail out here
     def _end_iter(self):
         """One-way transition to stopping execution."""
         self._log.debug("SIM TERMINATED")
@@ -217,6 +212,13 @@ class IceTrajectory(Trajectory):
             self.dist_list = haversine_vector(xv, yv, unit=Unit.KILOMETERS)
         except Exception as err:
             self._log.warning(f"ERROR: haversine failed with exception {err}")
+        self._is_consumed = True
+        raise StopIteration
+
+    def _kill_iter(self, err: str):
+        """One-way transition to stopping, with a warning."""
+        self._log.debug("SIM TERMINATED")
+        self._log.error(f"SOMETHING IS WRONG: {err}")
         self._is_consumed = True
         raise StopIteration
 

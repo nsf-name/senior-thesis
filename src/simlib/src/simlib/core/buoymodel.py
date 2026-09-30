@@ -28,17 +28,13 @@ class BuoyTrajectory(Trajectory):
         end_bound = self.dataframe.tail(1).get_column("datetime").item()
 
         # snap to a correct START bound.
-        if self.start_day is None:
-            self.start_day = begin_bound
         # start day can't be before the bounds of our data
-        elif self.start_day < begin_bound:
+        if self.start_day is None or self.start_day < begin_bound:
             self.start_day = begin_bound
 
         # snap to a correct END bound.
-        if self.end_day is None:
-            self.end_day = end_bound
         # end day can't be beyond the bounds of our data
-        elif self.end_day > end_bound:
+        if self.end_day is None or self.end_day > end_bound:
             self.end_day = end_bound
 
         # now, filter accordingly.
