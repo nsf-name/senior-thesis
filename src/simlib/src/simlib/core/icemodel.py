@@ -1,6 +1,5 @@
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Optional
 
 from haversine import Unit, haversine_vector
 import numpy as np
@@ -146,8 +145,8 @@ class IceTrajectory(Trajectory):
     def _lookup_vector(
         self,
         xy: tuple[float, float],
-        t: Optional[datetime] = None,
-        index: Optional[int] = None,
+        t: datetime | None = None,
+        index: int | None = None,
     ) -> tuple[float, float]:  # type: ignore
         """Lookup a (x,y) coordinate and return the vector motion."""
 
@@ -225,10 +224,3 @@ class IceTrajectory(Trajectory):
         """Exhaust the simulator's internal iterator."""
         for _ in self:
             pass
-
-    # TODO: implement plot methods
-    def plot(self):
-        raise NotImplementedError
-
-    def curried_plot(self):
-        raise NotImplementedError

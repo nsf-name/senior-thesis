@@ -2,7 +2,6 @@ from dataclasses import dataclass
 from glob import glob
 import pathlib
 from queue import Queue
-from typing import Optional
 from typing import Any
 
 import polars as pl
@@ -22,9 +21,9 @@ class Simulator:
 
     buoydir: pathlib.Path
     icedir: pathlib.Path
-    log_queue: Optional[Queue[Any]] = None
-    loglevel: Optional[LogLevel] = None
-    name: Optional[str] = None
+    log_queue: Queue[Any] | None = None
+    loglevel: LogLevel | None = None
+    name: str | None = None
 
     def __post_init__(self):
         if self.loglevel is None:
@@ -42,16 +41,16 @@ class Simulator:
 
         self._log.info("Simulator init is complete, now making simulators...")
         # get cleaned paths for each one
-        buoylist = map(pathlib.Path, list(sorted(glob(str(self.buoydir) + "/*.csv"))))
+        buoylist = map(pathlib.Path, sorted(glob(str(self.buoydir) + "/*.csv")))
 
         # TODO:
         # conceptually, the runs aren't that bad. the buoys is just a glob over
-        # the files we were passed in. then the ice files are just loading the netCDF.
+        # the files we were passed in. then the ice files are just loading netCDF.
         # of course, what we need to do is just do buoys first. ice comes second.
         # we also need to finish the plotter. do ice one at a time...
 
         # now make a dictionary to hold all the runs
-        self._sim_dict = dict()
+        self._sim_dict = {}
 
         for location in buoylist:
             name = location.name.rstrip(".csv")
@@ -68,8 +67,11 @@ class Simulator:
     def plot_sim(self, simpair: tuple[BuoyTrajectory, IceTrajectory]):
         """Save an image of the two simulators to disk."""
         raise NotImplementedError
+
         # TODO: this is where R will be dropped in
         # we need to FFI to R in order to do plots, since Cartopy sucks
+
+        # TODO: much closer now!
 
     @property
     def simulators(self) -> list[int]:

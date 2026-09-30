@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import cast
 from itertools import chain
+from typing import cast
 
 from haversine import Unit, haversine_vector
 import polars as pl
@@ -78,10 +78,3 @@ class BuoyTrajectory(Trajectory):
     def __len__(self):
         # .shape returns (rows, columns).
         return self.dataframe.shape[0]
-
-    # TODO: implement plot methods
-    def plot(self):
-        raise NotImplementedError
-
-    def curried_plot(self):
-        raise NotImplementedError

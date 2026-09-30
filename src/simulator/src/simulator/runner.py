@@ -11,13 +11,9 @@ import polars as pl
 from simlib.core.buoymodel import BuoyTrajectory
 from simlib.core.dataloader import load_ice_data
 from simlib.core.icemodel import IceTrajectory
-from simlib.tools.logging import (
-    LogLevel,
-    conf_interactive_logger,
-    conf_file_logger,
-)
-from simlib.tools.utilities import DataExportType
 from simlib.tools.ffi_plot import ffi_plot
+from simlib.tools.logging import LogLevel, conf_file_logger, conf_interactive_logger
+from simlib.tools.utilities import DataExportType
 from tqdm import tqdm
 import xarray as xr
 
@@ -78,7 +74,7 @@ def run_simulation(args):
     )
     init_time = time.perf_counter()
     mainlog.info("Preparing simulation for runtime...")
-    mainlog.debug(f"Working path: {pathlib.Path().resolve()}")
+    mainlog.debug(f"Working path: {pathlib.Path().cwd()}")
 
     # create our uniquely identifying timestamp for this run.
     append = datetime.now().strftime("%Y-%m-%d_%H:%M")
@@ -89,9 +85,7 @@ def run_simulation(args):
         sys.exit(1)
 
     # assemble the list of buoys to be simulated with functional magic
-    buoylist = list(
-        map(pathlib.Path, list(sorted(glob(str(args.buoy_data) + "/*.csv"))))
-    )
+    buoylist = list(map(pathlib.Path, sorted(glob(str(args.buoy_data) + "/*.csv"))))
 
     # invariant: there is at least one buoy.
     if len(buoylist) == 0:

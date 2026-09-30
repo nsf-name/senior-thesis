@@ -1,10 +1,8 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from pathlib import Path
-from typing import Optional
-
 from logging import Logger
+from pathlib import Path
 
 import polars as pl
 from simlib.tools.logging import LogLevel, conf_interactive_logger
@@ -27,19 +25,15 @@ class Trajectory(ABC):
         timestep: Duration between simulation steps. If None, iterates through everything.
     """
 
-    # TODO: add a path variable since our worker can make it
-    # it would be nice to have! then we can plot most elegantly.
-
     id: str
-    write_path: Path
-    start_day: Optional[datetime] = None
-    end_day: Optional[datetime] = None
+    start_day: datetime | None = None
+    end_day: datetime | None = None
     pos_list: list[tuple[float, float]] = field(default_factory=list)
     date_list: list[datetime] = field(default_factory=list)
     dist_list: list[float] = field(default_factory=list)
-    loglevel: Optional[LogLevel] = None
-    logger: Optional[Logger] = None
-    timestep: Optional[timedelta] = None
+    loglevel: LogLevel | None = None
+    logger: Logger | None = None
+    timestep: timedelta | None = None
 
     def __post_init__(self):
         self._t = self.start_day
@@ -83,8 +77,9 @@ class Trajectory(ABC):
             case DataExportType.NETCDF:
                 raise NotImplementedError
 
-    @abstractmethod
-    def plot(self): ...
+    # TODO: complete this
+    def plot(self):
+        pass
 
     @property
     def consumed(self) -> bool:

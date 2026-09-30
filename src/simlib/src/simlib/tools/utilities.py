@@ -1,12 +1,7 @@
 from enum import Enum, auto
-from typing import Callable, TypeVar
+from collections.abc import Callable
+from typing import TypeVar
 
-# TODO: banned until I need them for speed reasons
-# import cartopy.io.shapereader as shpreader
-# import pyproj
-# from shapely.geometry import Point
-# from shapely.ops import unary_union
-# from shapely.prepared import prep
 import xarray as xr
 
 # defines a generic function return
@@ -55,6 +50,7 @@ def maybe_apply(pred: bool, func: Callable[[], T]) -> T | None:
 
 
 # this is a cheap function since it's just indexing
+# TODO: considered harmful
 def nearest_grid_point(ds: xr.Dataset, x: float, y: float) -> tuple[float, float]:
     """Find the grid cell nearest to two coordinates (in meters)."""
     x_snap = ds.x.sel(x=x, method="nearest").values.item()
@@ -79,13 +75,13 @@ def nearest_grid_point(ds: xr.Dataset, x: float, y: float) -> tuple[float, float
 # to_lonlat_transform = pyproj.Transformer.from_crs("EPSG:3408", "EPSG:4326", always_xy=True)
 
 
-def is_land(x: float, y: float) -> bool:
-    """Determines if the current coordinates are on land."""
-    lon, lat = to_lonlat_transform.transform(x, y)
-    return land.contains(Point(lon, lat))
+# def is_land(x: float, y: float) -> bool:
+#     """Determines if the current coordinates are on land."""
+#     lon, lat = to_lonlat_transform.transform(x, y)
+#     return land.contains(Point(lon, lat))
 
 
-# mmm. delicious syntactical sugar
-def is_ocean(x: float, y: float) -> bool:
-    """Determines if the current coordinates are in the ocean."""
-    return not is_land(x, y)
+# # mmm. delicious syntactical sugar
+# def is_ocean(x: float, y: float) -> bool:
+#     """Determines if the current coordinates are in the ocean."""
+#     return not is_land(x, y)
