@@ -8,13 +8,19 @@ First install `uv` by running `brew install uv` (or equivalent on your OS; if yo
 ```
 uv sync
 ```
-From there, it will download all Python dependencies (and Fortran ones, since `uv` uses binary wheels). Once that wraps up, run:
+From there, it will download all Python dependencies (and Fortran ones, since `uv` uses binary wheels). 
+Next, to setup the R environment, run:
+```
+./rsetup.sh
+```
+Follow all prompts. You may need to install some native libraries, such as `proj` and `BLAS`. How to do so for your platform is outside the scope of this documentation, and is easily found elsewhere.
+Once that wraps up, run:
 ```
 uv run simulator run
 ```
 This will start the parallel executor, which runs all the buoys in a thread pool. You are encouraged to tweak the exact setup to your needs. For help, run `uv run simulator --help`; you can use the `-h` or `--help` flag on any subcommand.
 
-In some [future version of MATLAB](https://www.mathworks.com/support/requirements/python-compatibility.html?s_tid=srchtitle_site_search_1_python+compatibility) (probably R2026b), Python 3.14 code will be callable in MATLAB (this tool uses Python 3.14). When that time comes, with your MATLAB's working directory set to wherever this code is located, run this at the Command Window:
+In [MATLAB R2026b](https://www.mathworks.com/support/requirements/python-compatibility.html?s_tid=srchtitle_site_search_1_python+compatibility) Python 3.14 code is callable in MATLAB (this tool uses Python 3.14). If you prefer, with your MATLAB's working directory set to wherever this code is located on your machine, run this at the Command Window:
 ```matlab
 >> pyenv('Version', ...
          pwd + "/.venv/bin/python", ...
@@ -25,7 +31,7 @@ This will load the Python interpreter into MATLAB. Then run:
 ```matlab
 >> py.importlib.import_module('simlib')
 ```
-Now you are ready to access the library. Since there's no MATLAB wrapper, you may find that it's a bit cumbersome to work with, and NumPy types will need conversion. 
+Now you are ready to access the library. Since there's no MATLAB wrapper, you may find that it's a bit cumbersome to work with, and NumPy types will need conversion.
 
 ## Performance?
 It's between pretty good to middling, depending on the specific simulator you're running. I had initially considered [Parcels](https://docs.parcels-code.org/en/latest/) for this, but it had way too much overhead and complexity for my needs (this is a 2D problem and Parcels is a 3D simulator), so I'm rolling my own. This is way faster, although I didn't get far into my Parcels kernel-building to see for myself. 
