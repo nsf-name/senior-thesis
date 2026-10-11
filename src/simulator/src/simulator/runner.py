@@ -32,7 +32,6 @@ def simulator_worker(
     data = pl.read_csv(buoy_path).with_columns(pl.col("datetime").str.to_datetime())
     buoy = BuoyTrajectory(
         id=name,
-        write_path=write_path,
         dataframe=data,
         logger=log,
         loglevel=log_level,
@@ -42,7 +41,6 @@ def simulator_worker(
     log.info("Done exporting buoy, now executing ice simulator...")
     ice = IceTrajectory(
         id=name,
-        write_path=write_path,
         start_day=buoy.timehead,
         end_day=buoy.timetail,
         init_pos=buoy.poshead,
@@ -113,7 +111,6 @@ def run_simulation(args):
     # have to use a pool, otherwise macOS complains about too many files open
     with Pool(processes=12) as pool:
         # why not ProcessPoolExecutor()? because this is lazy, and faster
-        # TODO: we have a much larger pool now...
         # maybe we should scale this for HPC universe. to get better perf.
         results = pool.imap_unordered(partial_worker, buoylist, chunksize=1)
         for _ in tqdm(

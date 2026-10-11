@@ -120,7 +120,6 @@ class IceTrajectory(Trajectory):
             newvec = self._lookup_vector(self._pos, t=self._t)
 
         # combine our new float correctly, and convert coordinate.
-        # TODO: step through one day manually???
         self._vec = (self._vec[0] + newvec[0], self._vec[1] + newvec[1])
         self._pos = self._conv_latlon(self._vec)
         self._log.debug(f"DIFF: was {newvec}, now {self._vec}")
