@@ -4,9 +4,11 @@ from datetime import datetime
 from haversine import Unit, haversine_vector
 import numpy as np
 import pandas as pd
+import xarray as xr
+import pyproj
+
 from simlib.core.basemodel import Trajectory
 from simlib.tools.utilities import ImpossibleArgumentsError, MissingDatesError
-import xarray as xr
 
 
 @dataclass(repr=False)
@@ -32,8 +34,6 @@ class IceTrajectory(Trajectory):
         super().__post_init__()
         self._log.info("IceTrajectory init starting")
         self.dataset = self.dataset.sortby("time")
-        # expensive, but we do need it, at least for now
-        import pyproj
 
         self._inv = pyproj.Transformer.from_crs(
             "EPSG:4326", "EPSG:3408", always_xy=True
@@ -47,11 +47,15 @@ class IceTrajectory(Trajectory):
         try:
             self._vec = self._conv_xy((self._pos[0], self._pos[1]))
         except Exception as err:
-            self._log.error(f"""
-            ERROR: failed to create simulator, exception: {err}
-            Initial passed values were {self._pos}
-            Treating this simulator as if it were complete.  
-            """)
+            self._log.error(
+                """
+                ERROR: failed to create simulator, exception: %s.
+                Initial passed values were %s;
+                Treating this simulator as if it were complete.  
+                """,
+                err,
+                self._pos,
+            )
             self._kill_iter("Error at creation-time.")
 
         # correctly set self._t and self.end_day if undefined
@@ -70,10 +74,11 @@ class IceTrajectory(Trajectory):
         if not isinstance(self.start_day, datetime):
             self.start_day = pd.to_datetime(self.start_day)
 
-        self._log.debug(f"Timestep resolution: {self.timestep}")
-        self._log.debug(f"Current date bounds: {self.start_day}, {self.end_day}")
-        # now, we cut our dataset to size...
+        self._log.debug("Timestep resolution: %s", self.timestep)
+        self._log.debug("Current date bounds: %s, %s", self.start_day, self.end_day)
+
         self.dataset = self.dataset.sel(time=slice(self.start_day, self.end_day))
+
         # let's see if we defined a timestamp, and use indexing if so
         if self.timestep is None:
             # not the clearest variable name, but no need for a refactor
@@ -81,9 +86,8 @@ class IceTrajectory(Trajectory):
             self._t_index = 0
         self._log.debug("Init complete")
 
-    # TODO: this len() is actually just plainly incorrect
     def __len__(self) -> int:
-        if self.pos_list != []:
+        if self.pos_list:
             return len(self.pos_list)
         return 0
 
@@ -112,7 +116,7 @@ class IceTrajectory(Trajectory):
         if (self.timestep is None) and (self._t_index >= len(self._tlen) - 1):
             self._kill_iter("Exceeded bounds of timestep indexing.")
 
-        self._log.debug(f"TIME: currently {self._t}")
+        self._log.debug("TIME: currently %s", self._t)
         # if we have no index, call lookup vector appropriately
         if self.timestep is None:
             newvec = self._lookup_vector(self._pos, index=self._t_index)
@@ -122,7 +126,7 @@ class IceTrajectory(Trajectory):
         # combine our new float correctly, and convert coordinate.
         self._vec = (self._vec[0] + newvec[0], self._vec[1] + newvec[1])
         self._pos = self._conv_latlon(self._vec)
-        self._log.debug(f"DIFF: was {newvec}, now {self._vec}")
+        self._log.debug("DIFF: was %s, now %s", newvec, self._vec)
 
         if self.timestep is None:
             self._t_index += 1
@@ -134,7 +138,7 @@ class IceTrajectory(Trajectory):
         self.date_list.append(self._t)
         self.vec_list.append(self._vec)
 
-        self._log.debug(f"COORDS: {self._pos}")
+        self._log.debug("COORDS: %s", self._pos)
         return self._pos
 
     def _lookup_vector(
@@ -160,7 +164,7 @@ class IceTrajectory(Trajectory):
             # conversion: (1 cm/s x 86,400 s/day) / 100cm/m = 864 m/day
             u = float(np.nan_to_num(vector.u.values.item() * 864))
             v = float(np.nan_to_num(vector.v.values.item() * 864))
-            self._log.debug(f"PHYSICS: vector pulls the object: ({u}, {v}) m")
+            self._log.debug("PHYSICS: vector pulls the object: (%s, %s) m", u, v)
             self._log.debug("TIME: stepping one day")
             return (u, v)
 
@@ -173,8 +177,8 @@ class IceTrajectory(Trajectory):
             delta = (self._tlen[index + 1] - self._tlen[index]).total_seconds() / 100
             u = float(np.nan_to_num(vector.u.values.item() * delta))
             v = float(np.nan_to_num(vector.v.values.item() * delta))
-            self._log.debug(f"PHYSICS: vector pulls the object: ({u}, {v}) m")
-            self._log.debug(f"TIME: stepping {delta * 100}s")
+            self._log.debug("PHYSICS: vector pulls the object: (%s, %s) m", u, v)
+            self._log.debug("TIME: stepping %ss", delta * 100)
             return (u, v)
 
     # these conv aren't static because they reuse the objects to avoid pyproj
@@ -187,7 +191,11 @@ class IceTrajectory(Trajectory):
             xy[1],
         )
         self._log.debug(
-            f"LOOKUP: ({xy[0]},{xy[1]}) [x,y] is ({lat},{lon}) in [lat,lon]"
+            "LOOKUP: (%s,%s) [x,y] is (%s,%s) in [lat,lon]",
+            xy[0],
+            xy[1],
+            lat,
+            lon,
         )
         return (lat, lon)
 
@@ -198,7 +206,11 @@ class IceTrajectory(Trajectory):
             latlon[1],
         )
         self._log.debug(
-            f"LOOKUP: ({latlon[0]},{latlon[1]}) [lat,lon] is ({x},{y}) in [x,y]"
+            "LOOKUP: (%s,%s) [lat,lon] is (%s,%s) in [x,y]",
+            latlon[0],
+            latlon[1],
+            x,
+            y,
         )
         return (x, y)
 
@@ -210,14 +222,14 @@ class IceTrajectory(Trajectory):
         try:
             self.dist_list = haversine_vector(xv, yv, unit=Unit.KILOMETERS)
         except Exception as err:
-            self._log.warning(f"ERROR: haversine failed with exception {err}")
+            self._log.warning("ERROR: haversine failed with exception %s", err)
         self._is_consumed = True
         raise StopIteration
 
     def _kill_iter(self, err: str):
         """One-way transition to stopping, with a warning."""
         self._log.debug("SIM TERMINATED")
-        self._log.error(f"SOMETHING IS WRONG: {err}")
+        self._log.error("SOMETHING IS WRONG: %s", err)
         self._is_consumed = True
         raise StopIteration
 

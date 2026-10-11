@@ -1,13 +1,12 @@
-from enum import Enum, auto
 from glob import glob
 
 import xarray as xr
 
 
-def load_ice_data() -> xr.Dataset:
+def load_ice_data(path: str) -> xr.Dataset:
     """Sets up the ice data."""
     xds = xr.open_mfdataset(
-        sorted(glob("/Users/nsf/Documents/Datasets/icemotion/*.nc")),
+        sorted(glob(path + "/*.nc")),
         data_vars="all",
         combine="by_coords",
     )

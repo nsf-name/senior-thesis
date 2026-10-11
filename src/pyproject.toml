@@ -11,3 +11,8 @@ dev = [
     "python-lsp-server>=1.14.0",
     "ruff>=0.15.20",
 ]
+
+[tool.pylint.messages_control]
+# C0114: __init__.py docstrings
+# W0511: TODO/FIXME
+disable = ["C0114", "W0511"]

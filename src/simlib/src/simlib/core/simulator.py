@@ -54,7 +54,7 @@ class Simulator:
 
         for location in buoylist:
             name = location.name.rstrip(".csv")
-            self._log.debug(f"Creating simulator for {name}...")
+            self._log.debug("Creating simulator for %s...", name)
             data = pl.read_csv(location).with_columns(
                 pl.col("datetime").str.to_datetime()
             )
@@ -75,10 +75,12 @@ class Simulator:
 
     @property
     def simulators(self) -> list[int]:
+        """Returns all simulators stored in this instance."""
         return list(self._sim_dict.keys())
 
     @property
     def simdict(self) -> dict:
+        """Returns dict of buoy-id:(Ice,Buoy) pairings."""
         return self._sim_dict
 
     # TODO: a method to fetch just ice objects and buoy objects would be cool,

@@ -56,9 +56,9 @@ class Trajectory(ABC):
     @abstractmethod
     def __len__(self) -> int: ...
 
-    def export(self, type: DataExportType, path: Path):
+    def export(self, dtype: DataExportType, path: Path):
         """Export the simulator data to the specified type."""
-        match type:
+        match dtype:
             case DataExportType.CSV:
                 try:
                     lats, lons = zip(*self.poslist)
@@ -73,20 +73,22 @@ class Trajectory(ABC):
                         orient="row",
                     ).write_csv(path)
                 except Exception as err:
-                    self._log.exception(f"unexpected {err=} on export")
+                    self._log.exception("unexpected %s on export", err)
             case DataExportType.NETCDF:
                 raise NotImplementedError
 
     # TODO: complete this
     def plot(self):
-        pass
+        """Currently does absolutely nothing."""
 
     @property
     def consumed(self) -> bool:
+        """States if the simulator is done running."""
         return self._is_consumed
 
     @property
     def filename(self) -> str:
+        """Returns the filename this simulator will use for saving."""
         return self._filename
 
     @property

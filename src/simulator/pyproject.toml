@@ -16,3 +16,8 @@ where = ["src"]
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
+
+[dependency-groups]
+dev = [
+    "pylint>=4.1.3",
+]

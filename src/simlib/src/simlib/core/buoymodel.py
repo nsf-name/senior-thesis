@@ -16,8 +16,6 @@ class BuoyTrajectory(Trajectory):
         dataframe: Source polars dataframe containing buoy run.
     """
 
-    # TODO: to clean them, do the following:
-    # pl.read_csv(csvfiles[0]).with_columns(pl.col('datetime').str.to_datetime())
     dataframe: pl.DataFrame
 
     def __post_init__(self):
@@ -27,12 +25,10 @@ class BuoyTrajectory(Trajectory):
         begin_bound = self.dataframe.head(1).get_column("datetime").item()
         end_bound = self.dataframe.tail(1).get_column("datetime").item()
 
-        # snap to a correct START bound.
         # start day can't be before the bounds of our data
         if self.start_day is None or self.start_day < begin_bound:
             self.start_day = begin_bound
 
-        # snap to a correct END bound.
         # end day can't be beyond the bounds of our data
         if self.end_day is None or self.end_day > end_bound:
             self.end_day = end_bound
@@ -44,14 +40,13 @@ class BuoyTrajectory(Trajectory):
         )
 
         # report our date status to ensure we didn't bungle it
-        self._log.debug(f"Timestep resolution: {self.timestep}")
-        self._log.debug(f"Current date bounds: {self.start_day}, {self.end_day}")
+        self._log.debug("Timestep resolution: %s", self.timestep)
+        self._log.debug("Current date bounds: %s, %s", self.start_day, self.end_day)
 
         # now it'll do basically all the hard work for us
         self._log.debug("Preparing to automate all math...")
         self._setup()
         self._log.info("BuoyTrajectory complete, is now consumed")
-
         # then call .export() at create-time to dump this back out!
 
     def _setup(self):
@@ -68,7 +63,7 @@ class BuoyTrajectory(Trajectory):
                 array[:-1], array[1:], unit=Unit.KILOMETERS
             )
         except Exception as err:
-            self._log.warning(f"ERROR: haversine failed with exception {err}")
+            self._log.warning("ERROR: haversine failed with exception %s", err)
         self._is_consumed = True
 
     def __len__(self):

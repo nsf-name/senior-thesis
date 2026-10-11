@@ -5,6 +5,7 @@ from simulator.runner import run_simulation
 
 
 def main():
+    """Entrypoint for the simulator."""
     parser = argparse.ArgumentParser(
         prog="simulator",
         description="Simulate sea ice buoys",

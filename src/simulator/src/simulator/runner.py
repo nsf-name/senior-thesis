@@ -8,14 +8,15 @@ import sys
 import time
 
 import polars as pl
+from tqdm import tqdm
+import xarray as xr
+
 from simlib.core.buoymodel import BuoyTrajectory
 from simlib.core.dataloader import load_ice_data
 from simlib.core.icemodel import IceTrajectory
 from simlib.tools.ffi_plot import ffi_plot
 from simlib.tools.logging import LogLevel, conf_file_logger, conf_interactive_logger
 from simlib.tools.utilities import DataExportType
-from tqdm import tqdm
-import xarray as xr
 
 
 def simulator_worker(
@@ -28,7 +29,7 @@ def simulator_worker(
 
     name = buoy_path.name.rstrip(".csv")
     log = conf_file_logger(name, write_path / (name + ".log"), LogLevel.DEBUG)
-    log.info(f"Preparing: {name}")
+    log.info("Preparing: %s", name)
     data = pl.read_csv(buoy_path).with_columns(pl.col("datetime").str.to_datetime())
     buoy = BuoyTrajectory(
         id=name,
@@ -36,7 +37,7 @@ def simulator_worker(
         logger=log,
         loglevel=log_level,
     )
-    log.info(f"Done with loading and preparations. Executing {buoy.filename}...")
+    log.info("Done with loading and preparations. Executing %s...", buoy.filename)
     buoy.export(DataExportType.CSV, write_path / (buoy.filename + ".csv"))
     log.info("Done exporting buoy, now executing ice simulator...")
     ice = IceTrajectory(
@@ -49,12 +50,12 @@ def simulator_worker(
         dataset=ice_data,
     )
     ice.runsim()
-    log.info(f"Done running {ice.filename}. Now exporting...")
+    log.info("Done running %s. Now exporting...", ice.filename)
     ice.export(DataExportType.CSV, write_path / (ice.filename + ".csv"))
-    log.info(f"Done executing {name}")
-    log.info(f"Making a plot for both simulators for {name}...")
+    log.info("Done executing %s.", name)
+    log.info("Making a plot for both simulators for %s...", name)
     ffi_plot(write_path, name, write_path)
-    log.info(f"Done plotting {name}.")
+    log.info("Done plotting %s.", name)
 
 
 def create_simpaths(outdir: pathlib.Path, append: str) -> pathlib.Path:
@@ -72,7 +73,7 @@ def run_simulation(args):
     )
     init_time = time.perf_counter()
     mainlog.info("Preparing simulation for runtime...")
-    mainlog.debug(f"Working path: {pathlib.Path().cwd()}")
+    mainlog.debug("Working path: %s.", pathlib.Path().cwd())
 
     # create our uniquely identifying timestamp for this run.
     append = datetime.now().strftime("%Y-%m-%d_%H:%M")
@@ -93,10 +94,9 @@ def run_simulation(args):
     mainlog.info("Now reading in simulation data, please wait...")
 
     output = create_simpaths(args.out_dir, append)
-    mainlog.info(f"Saving to: {output}")
+    mainlog.info("Saving to: %s", output)
 
-    # TODO: slow in many ways
-    icedata = load_ice_data()
+    icedata = load_ice_data(args.ice_data)
 
     # map can only take one argument, so we need to curry here
     partial_worker = partial(
@@ -118,10 +118,8 @@ def run_simulation(args):
         ):
             pass
 
-    mainlog.info(f"Simulation complete. Processed {len(buoylist)} items.")
+    mainlog.info("Simulation complete. Processed %d items.", len(buoylist))
 
     end_time = time.perf_counter()
-    mainlog.info(f"Elapsed: {end_time - init_time:.2f}s")
-
-    # we delay this to allow for queues to drain in the background
+    mainlog.info("Elapsed: %.2fs", end_time - init_time)
     sys.exit(0)
