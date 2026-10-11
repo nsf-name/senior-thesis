@@ -1,12 +1,13 @@
 from glob import glob
+import pathlib
 
 import xarray as xr
 
 
-def load_ice_data(path: str) -> xr.Dataset:
+def load_ice_data(path: pathlib.Path) -> xr.Dataset:
     """Sets up the ice data."""
     xds = xr.open_mfdataset(
-        sorted(glob(path + "/*.nc")),
+        sorted(glob(str(path) + "/*.nc")),
         data_vars="all",
         combine="by_coords",
     )
