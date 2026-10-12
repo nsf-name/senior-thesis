@@ -4,21 +4,17 @@ version = "0.1.0"
 description = "Dependencies for the buoy simulator"
 requires-python = ">=3.13,<=3.14"
 dependencies = [
-    "cartopy>=0.25.0",
+    "argcomplete>=3.7.2",
     "dask>=2026.7.1",
     "geopandas>=1.1.4",
     "h5netcdf>=1.8.1",
     "h5py>=3.16.0",
     "haversine>=2.9.0",
-    "matplotlib>=3.10.9",
-    "modules>=1.0.0",
     "netcdf4>=1.7.3",
     "numpy>=2.2.6",
     "polars>=1.43.0",
     "pyproj>=3.7.1",
-    "seaborn>=0.13.2",
     "tqdm>=4.69.1",
-    "trio>=0.33.0",
     "xarray>=2025.6.1",
 ]
 

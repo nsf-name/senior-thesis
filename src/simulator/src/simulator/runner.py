@@ -1,5 +1,6 @@
 import os
 import pathlib
+import signal
 import sys
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
@@ -73,6 +74,9 @@ def create_simpaths(outdir: pathlib.Path, append: str) -> pathlib.Path:
 
 def run_simulation(args):
     """The main event loop for all code."""
+    # process shell emergency exit
+    signal.signal(signal.SIGINT, lambda *_: sys.exit(130))
+    # start logging now
     mainlog = conf_interactive_logger(
         "mainprocess", LogLevel.DEBUG if args.verbose else LogLevel.INFO
     )
@@ -110,7 +114,6 @@ def run_simulation(args):
 
     mainlog.info("Preparations complete. Started process pool. Executing...")
     with ProcessPoolExecutor(max_workers=args.nproc) as executor:
-        # using futures reduces polling in tqdm()
         futures = {executor.submit(partial_worker, job) for job in buoylist}
         for _ in tqdm(
             as_completed(futures),

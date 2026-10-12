@@ -2,7 +2,9 @@
 name = "simulator"
 version = "0.1.0"
 description = "Lagrangian buoy simulator"
-dependencies = ["simlib"]
+dependencies = [
+    "simlib",
+]
 
 [project.scripts]
 simulator = "simulator.main:main"
@@ -16,8 +18,3 @@ where = ["src"]
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
-
-[dependency-groups]
-dev = [
-    "pylint>=4.1.3",
-]

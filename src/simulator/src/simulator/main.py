@@ -2,6 +2,8 @@ import argparse
 import multiprocessing
 import pathlib
 
+import argcomplete
+
 from simulator.runner import run_simulation
 
 
@@ -119,5 +121,6 @@ def main():
         default=base / "ice-data",
     )
 
+    argcomplete.autocomplete(parser)
     args = parser.parse_args()
     args.func(args)
