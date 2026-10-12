@@ -30,7 +30,9 @@ def simulator_worker(
     name = buoy_path.name.rstrip(".csv")
     log = conf_file_logger(name, write_path / (name + ".log"), LogLevel.DEBUG)
     log.info("Preparing: %s", name)
-    data = pl.read_csv(buoy_path).with_columns(pl.col("datetime").str.to_datetime())
+    data = pl.read_csv(buoy_path).with_columns(
+        pl.col("datetime").str.to_datetime(time_zone="UTC")
+    )
     buoy = BuoyTrajectory(
         id=name,
         dataframe=data,
@@ -75,7 +77,10 @@ def run_simulation(args):
         "mainprocess", LogLevel.DEBUG if args.verbose else LogLevel.INFO
     )
     init_time = time.perf_counter()
-    timestamp = datetime.now().strftime("%Y-%m-%d_%H:%M")
+    # in the user's local timezone, not that of the data
+    timestamp = datetime.now(tz=(datetime.now().astimezone().tzinfo)).strftime(
+        "%Y-%m-%d_%H:%M"
+    )
 
     mainlog.info("Preparing simulation for runtime...")
     mainlog.debug("Working path: %s.", pathlib.Path().cwd())

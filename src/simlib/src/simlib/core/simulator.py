@@ -57,7 +57,7 @@ class Simulator:
             name = location.name.rstrip(".csv")
             self._log.debug("Creating simulator for %s...", name)
             data = pl.read_csv(location).with_columns(
-                pl.col("datetime").str.to_datetime()
+                pl.col("datetime").str.to_datetime(time_zone="UTC")
             )
             self._sim_dict[name] = BuoyTrajectory(
                 id=name, dataframe=data, loglevel=self.loglevel

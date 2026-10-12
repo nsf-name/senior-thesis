@@ -13,5 +13,10 @@ def load_ice_data(path: pathlib.Path) -> xr.Dataset:
     )
     # correct from Julian to Gregorian to make the math easier
     # we're ignoring all the errors because they're very small relatively
-    xds["time"] = xds.indexes["time"].to_datetimeindex(unsafe=True, time_unit="ns")
+    # also cast to UTC for type safety reasons
+    xds["time"] = (
+        xds.indexes["time"]
+        .to_datetimeindex(unsafe=True, time_unit="ns")
+        .tz_localize("UTC")
+    )
     return xds
