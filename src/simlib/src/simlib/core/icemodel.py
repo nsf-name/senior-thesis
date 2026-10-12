@@ -21,9 +21,6 @@ class IceTrajectory(Trajectory):
         vec_list: Accumulated motion vectors. For external capture.
     """
 
-    # TODO: lots of sus assumptions in this code.
-    # need to contemplate and analyze further.
-
     dataset: xr.Dataset
     init_pos: tuple[float, float]
     vec_list: list[tuple[float, float]] = field(default_factory=list)
@@ -42,30 +39,19 @@ class IceTrajectory(Trajectory):
             "EPSG:3408", "EPSG:4326", always_xy=True
         )
 
-        # self._pos is our (x,y); self._vec, our (lat,lon)
-        self._pos = (self.init_pos[0], self.init_pos[1])
+        self._log.info("Starting position: %s", self.init_pos)
         try:
-            self._vec = self._conv_xy((self._pos[0], self._pos[1]))
-        except Exception as err:
-            self._log.error(
-                """
-                ERROR: failed to create simulator, exception: %s.
-                Initial passed values were %s;
-                Treating this simulator as if it were complete.  
-                """,
-                err,
-                self._pos,
-            )
-            self._kill_iter("Error at creation-time.")
+            self._pos_xy = self._latlon_to_xy(self.init_pos)
+        except TypeError as err:
+            self._kill_iter(f"failed to create simulator: {err}")
 
-        # correctly set self._t and self.end_day if undefined
         if not isinstance(self._t, datetime):
             self._t = pd.to_datetime(self.start_day)
         else:
             self._t = self.start_day
 
         if self.end_day is None:
-            # set to datetime(2025, 1, 1), the limit of this data.
+            # the ice vector dataset is undefined past this point
             self.end_day = datetime(2025, 1, 1)
 
         # clean up typing since they're internally raw Unix time
@@ -78,11 +64,13 @@ class IceTrajectory(Trajectory):
         self._log.debug("Current date bounds: %s, %s", self.start_day, self.end_day)
 
         self.dataset = self.dataset.sel(time=slice(self.start_day, self.end_day))
+        # used for sanity checking later
+        self.x_vals = self.dataset.x.values
+        self.y_vals = self.dataset.y.values
 
         # let's see if we defined a timestamp, and use indexing if so
         if self.timestep is None:
-            # not the clearest variable name, but no need for a refactor
-            self._tlen = self.dataset.indexes["time"].to_pydatetime()  # type: ignore
+            self._tlen = self.dataset.indexes["time"].to_pydatetime()
             self._t_index = 0
         self._log.debug("Init complete")
 
@@ -100,9 +88,6 @@ class IceTrajectory(Trajectory):
 
     def __next__(self) -> tuple[float, float]:
         """Returns the next position."""
-        # invariant: if this fails, something is wrong
-        assert isinstance(self._t, datetime)
-
         # if we're done, we shouldn't be iterating, so suspend safely.
         if self.consumed:
             raise StopIteration
@@ -114,19 +99,22 @@ class IceTrajectory(Trajectory):
             self._kill_iter("Impossible ending date.")
         # if we're rolling with an index-based method: stop iterating at len()
         if (self.timestep is None) and (self._t_index >= len(self._tlen) - 1):
-            self._kill_iter("Exceeded bounds of timestep indexing.")
+            self._end_iter("Exceeded bounds of timestep indexing.")
 
         self._log.debug("TIME: currently %s", self._t)
         # if we have no index, call lookup vector appropriately
         if self.timestep is None:
-            newvec = self._lookup_vector(self._pos, index=self._t_index)
+            newvec = self._lookup_vector(self._pos_xy, index=self._t_index)
         else:
-            newvec = self._lookup_vector(self._pos, t=self._t)
+            newvec = self._lookup_vector(self._pos_xy, t=self._t)
 
-        # combine our new float correctly, and convert coordinate.
-        self._vec = (self._vec[0] + newvec[0], self._vec[1] + newvec[1])
-        self._pos = self._conv_latlon(self._vec)
-        self._log.debug("DIFF: was %s, now %s", newvec, self._vec)
+        self._log.debug("DIFF: was %s, now %s", newvec, self._pos_xy)
+        self._pos_xy = (self._pos_xy[0] + newvec[0], self._pos_xy[1] + newvec[1])
+
+        latlon = self._xy_to_latlon(self._pos_xy)
+
+        self.pos_list.append(latlon)
+        self.vec_list.append(newvec)
 
         if self.timestep is None:
             self._t_index += 1
@@ -134,19 +122,17 @@ class IceTrajectory(Trajectory):
         else:
             self._t += self.timestep
 
-        self.pos_list.append(self._pos)
         self.date_list.append(self._t)
-        self.vec_list.append(self._vec)
 
-        self._log.debug("COORDS: %s", self._pos)
-        return self._pos
+        self._log.debug("COORDS: %s", latlon)
+        return latlon
 
     def _lookup_vector(
         self,
         xy: tuple[float, float],
         t: datetime | None = None,
         index: int | None = None,
-    ) -> tuple[float, float]:  # type: ignore
+    ) -> tuple[float, float]:
         """Lookup a (x,y) coordinate and return the vector motion."""
 
         if t is None and index is None:
@@ -159,11 +145,21 @@ class IceTrajectory(Trajectory):
                 "You must call _lookup_vector with only one argument"
             )
 
+        # out of bounds check: are we too far from the nearest grid cell
+        # for the values to physically make sense?
+        # if (
+        #     abs(self.x_vals - xy[0]).min() > 12500.0
+        #     or abs(self.y_vals - xy[1]).min() > 12500.0
+        # ):
+        #     self._kill_iter("Drifted too far from nearest grid cell.")
+
         if t is not None:
             vector = self.dataset.sel(x=xy[0], y=xy[1], time=t, method="nearest")
             # conversion: (1 cm/s x 86,400 s/day) / 100cm/m = 864 m/day
-            u = float(np.nan_to_num(vector.u.values.item() * 864))
-            v = float(np.nan_to_num(vector.v.values.item() * 864))
+            u = float(vector.u.values.item() * 864)
+            v = float(vector.v.values.item() * 864)
+            if np.isnan(u) or np.isnan(v):
+                self._kill_iter("Illegal u or v value.")
             self._log.debug("PHYSICS: vector pulls the object: (%s, %s) m", u, v)
             self._log.debug("TIME: stepping one day")
             return (u, v)
@@ -174,55 +170,40 @@ class IceTrajectory(Trajectory):
             )
 
             # conversion: (1 cm/s x TIME s) / 100 cm/m = ?? m/TIME
-            delta = (self._tlen[index + 1] - self._tlen[index]).total_seconds() / 100
-            u = float(np.nan_to_num(vector.u.values.item() * delta))
-            v = float(np.nan_to_num(vector.v.values.item() * delta))
+            delta = (self._tlen[index + 1] - self._tlen[index]).total_seconds() * 0.01
+            u = float(vector.u.values.item() * delta)
+            v = float(vector.v.values.item() * delta)
+            if np.isnan(u) or np.isnan(v):
+                self._kill_iter("Illegal u or v value.")
             self._log.debug("PHYSICS: vector pulls the object: (%s, %s) m", u, v)
             self._log.debug("TIME: stepping %ss", delta * 100)
             return (u, v)
 
-    # these conv aren't static because they reuse the objects to avoid pyproj
-    # having to recreate them, and to share loggers, too.
-
-    def _conv_latlon(self, xy) -> tuple[float, float]:
-        """Convert (x,y) to (lat,lon)."""
-        lat, lon = self._fwd.transform(
-            xy[0],
-            xy[1],
-        )
-        self._log.debug(
-            "LOOKUP: (%s,%s) [x,y] is (%s,%s) in [lat,lon]",
-            xy[0],
-            xy[1],
-            lat,
-            lon,
-        )
-        return (lat, lon)
-
-    def _conv_xy(self, latlon) -> tuple[float, float]:
-        """Convert (lat,lon) to (x,y)."""
-        x, y = self._inv.transform(
-            latlon[0],
-            latlon[1],
-        )
-        self._log.debug(
-            "LOOKUP: (%s,%s) [lat,lon] is (%s,%s) in [x,y]",
-            latlon[0],
-            latlon[1],
-            x,
-            y,
-        )
+    def _latlon_to_xy(self, latlon: tuple[float, float]) -> tuple[float, float]:
+        """(lat, lon) -> (x, y) in EPSG:3408"""
+        x, y = self._inv.transform(latlon[1], latlon[0])  # always_xy wants (lon, lat)
         return (x, y)
 
-    def _end_iter(self):
+    def _xy_to_latlon(self, xy: tuple[float, float]) -> tuple[float, float]:
+        """(x, y) in EPSG:3408 -> (lat, lon)"""
+        lon, lat = self._fwd.transform(xy[0], xy[1])  # always_xy returns (lon, lat)
+        return (lat, lon)
+
+    def _end_iter(self, msg: str | None):
         """One-way transition to stopping execution."""
         self._log.debug("SIM TERMINATED")
-        # since we are now done, we can compute the position list fast, in km of course.
-        xv, yv = self.pos_list[:-1], self.pos_list[1:]
+
+        if msg is not None:
+            self._log.info("Message: %s", msg)
+
         try:
+            xv, yv = self.pos_list[:-1], self.pos_list[1:]
             self.dist_list = haversine_vector(xv, yv, unit=Unit.KILOMETERS)
-        except Exception as err:
-            self._log.warning("ERROR: haversine failed with exception %s", err)
+        except ValueError:
+            self._log.warning("ERROR: haversine failed due to simulator also failing!")
+        except IndexError:
+            self._log.warning("ERROR: haversine failed due to simulator also failing!")
+
         self._is_consumed = True
         raise StopIteration
 

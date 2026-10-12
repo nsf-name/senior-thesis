@@ -2,6 +2,7 @@ from datetime import datetime
 from functools import partial
 from glob import glob
 from multiprocessing import Pool
+from subprocess import CalledProcessError
 import os
 import pathlib
 import sys
@@ -54,7 +55,10 @@ def simulator_worker(
     ice.export(DataExportType.CSV, write_path / (ice.filename + ".csv"))
     log.info("Done executing %s.", name)
     log.info("Making a plot for both simulators for %s...", name)
-    ffi_plot(write_path, name, write_path)
+    try:
+        ffi_plot(write_path, name, write_path)
+    except CalledProcessError as err:
+        log.error("R FFI plot failed with error %s", err)
     log.info("Done plotting %s.", name)
 
 
@@ -72,33 +76,27 @@ def run_simulation(args):
         "mainprocess", LogLevel.DEBUG if args.verbose else LogLevel.INFO
     )
     init_time = time.perf_counter()
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H:%M")
+
     mainlog.info("Preparing simulation for runtime...")
     mainlog.debug("Working path: %s.", pathlib.Path().cwd())
-
-    # create our uniquely identifying timestamp for this run.
-    append = datetime.now().strftime("%Y-%m-%d_%H:%M")
-
-    # invariant: one run per minute, maximum.
-    if os.path.exists(args.out_dir / ("run_" + append)):
+    if os.path.exists(args.out_dir / ("run_" + timestamp)):
         mainlog.error("The output directory already has a run for this timestamp.")
         sys.exit(1)
 
     # assemble the list of buoys to be simulated with functional magic
     buoylist = list(map(pathlib.Path, sorted(glob(str(args.buoy_data) + "/*.csv"))))
-
-    # invariant: there is at least one buoy.
     if len(buoylist) == 0:
         mainlog.error("Buoy data directory is missing or empty.")
         sys.exit(1)
 
     mainlog.info("Now reading in simulation data, please wait...")
-
-    output = create_simpaths(args.out_dir, append)
-    mainlog.info("Saving to: %s", output)
-
     icedata = load_ice_data(args.ice_data)
 
-    # map can only take one argument, so we need to curry here
+    output = create_simpaths(args.out_dir, timestamp)
+    mainlog.info("Saving to: %s", output)
+
+    # curry because map() can't take two args
     partial_worker = partial(
         simulator_worker,
         write_path=output,
@@ -107,11 +105,8 @@ def run_simulation(args):
     )
 
     mainlog.info("Preparations complete. Started process pool. Executing...")
-
-    # have to use a pool, otherwise macOS complains about too many files open
-    with Pool(processes=12) as pool:
-        # why not ProcessPoolExecutor()? because this is lazy, and faster
-        # maybe we should scale this for HPC universe. to get better perf.
+    with Pool(processes=args.nproc) as pool:
+        # why not ProcessPoolExecutor()? because this is lazy, not eager.
         results = pool.imap_unordered(partial_worker, buoylist, chunksize=1)
         for _ in tqdm(
             results, total=len(buoylist), disable=args.verbose, colour="green"
@@ -121,5 +116,6 @@ def run_simulation(args):
     mainlog.info("Simulation complete. Processed %d items.", len(buoylist))
 
     end_time = time.perf_counter()
-    mainlog.info("Elapsed: %.2fs", end_time - init_time)
+    diff = end_time - init_time
+    mainlog.info("Elapsed: %.2fsm (%.2fss)", diff / 60, diff)
     sys.exit(0)

@@ -1,4 +1,5 @@
 import argparse
+import multiprocessing
 import pathlib
 
 from simulator.runner import run_simulation
@@ -52,6 +53,15 @@ def main():
         action="store",
         type=pathlib.Path,
         default=base / "ice-data",
+    )
+    run_p.add_argument(
+        "-n",
+        "--nproc",
+        metavar="NUM",
+        help="default: $(nproc)",
+        action="store",
+        type=int,
+        default=multiprocessing.cpu_count(),
     )
     run_p.set_defaults(func=run_simulation)
 
