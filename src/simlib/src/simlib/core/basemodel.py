@@ -73,8 +73,8 @@ class Trajectory(ABC):
                         },
                         orient="row",
                     ).write_csv(path)
-                except Exception as err:
-                    self._log.exception("unexpected %s on export", err)
+                except ValueError:
+                    self._log.exception("not enough values to export")
             case DataExportType.NETCDF:
                 raise NotImplementedError
 

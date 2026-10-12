@@ -64,9 +64,6 @@ class IceTrajectory(Trajectory):
         self._log.debug("Current date bounds: %s, %s", self.start_day, self.end_day)
 
         self.dataset = self.dataset.sel(time=slice(self.start_day, self.end_day))
-        # used for sanity checking later
-        self.x_vals = self.dataset.x.values
-        self.y_vals = self.dataset.y.values
 
         # let's see if we defined a timestamp, and use indexing if so
         if self.timestep is None:
@@ -144,14 +141,6 @@ class IceTrajectory(Trajectory):
             raise ImpossibleArgumentsError(
                 "You must call _lookup_vector with only one argument"
             )
-
-        # out of bounds check: are we too far from the nearest grid cell
-        # for the values to physically make sense?
-        # if (
-        #     abs(self.x_vals - xy[0]).min() > 12500.0
-        #     or abs(self.y_vals - xy[1]).min() > 12500.0
-        # ):
-        #     self._kill_iter("Drifted too far from nearest grid cell.")
 
         if t is not None:
             vector = self.dataset.sel(x=xy[0], y=xy[1], time=t, method="nearest")
