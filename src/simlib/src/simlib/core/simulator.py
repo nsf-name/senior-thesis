@@ -1,10 +1,11 @@
+import pathlib
 from dataclasses import dataclass
 from glob import glob
-import pathlib
 from queue import Queue
 from typing import Any
 
 import polars as pl
+
 from simlib.core import BuoyTrajectory, IceTrajectory
 from simlib.tools.logging import LogLevel, conf_interactive_logger, conf_worker_logger
 

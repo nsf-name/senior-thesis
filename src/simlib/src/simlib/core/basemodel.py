@@ -5,6 +5,7 @@ from logging import Logger
 from pathlib import Path
 
 import polars as pl
+
 from simlib.tools.logging import LogLevel, conf_interactive_logger
 from simlib.tools.utilities import DataExportType, UnfinishedSimulatorError
 

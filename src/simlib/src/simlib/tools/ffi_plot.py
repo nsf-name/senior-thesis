@@ -1,8 +1,9 @@
-from pathlib import Path
 import subprocess
 import tempfile
+from pathlib import Path
 
 import marimo as mo
+
 # from simlib.core import BuoyTrajectory, IceTrajectory
 
 

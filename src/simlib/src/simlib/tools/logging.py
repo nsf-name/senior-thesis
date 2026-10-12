@@ -1,6 +1,6 @@
-from enum import IntEnum
 import logging
 import logging.handlers
+from enum import IntEnum
 from pathlib import Path
 from queue import Queue
 from typing import Any

@@ -1,5 +1,5 @@
-from enum import Enum, auto
 from collections.abc import Callable
+from enum import Enum, auto
 from typing import TypeVar
 
 import xarray as xr

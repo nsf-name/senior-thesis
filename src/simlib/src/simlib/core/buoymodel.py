@@ -3,8 +3,9 @@ from datetime import datetime
 from itertools import chain
 from typing import cast
 
-from haversine import Unit, haversine_vector
 import polars as pl
+from haversine import Unit, haversine_vector
+
 from simlib.core.basemodel import Trajectory
 
 

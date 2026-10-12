@@ -1,5 +1,5 @@
-from glob import glob
 import pathlib
+from glob import glob
 
 import xarray as xr
 

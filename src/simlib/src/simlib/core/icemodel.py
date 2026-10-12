@@ -1,11 +1,11 @@
 from dataclasses import dataclass, field
 from datetime import datetime
 
-from haversine import Unit, haversine_vector
 import numpy as np
 import pandas as pd
-import xarray as xr
 import pyproj
+import xarray as xr
+from haversine import Unit, haversine_vector
 
 from simlib.core.basemodel import Trajectory
 from simlib.tools.utilities import ImpossibleArgumentsError, MissingDatesError

@@ -22,7 +22,9 @@ jobs:
       run: uv sync --locked --all-extras --dev
 
     - name: Linting
-      run: uv run ruff check .
+      run: |
+        uv run ruff check $(git ls-files '*.py')
 
     - name: Formatting
-      run: uv run ruff format --check .
+      run: |
+        uv run ruff format --check $(git ls-files '*.py')
