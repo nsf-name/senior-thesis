@@ -10,6 +10,7 @@ from glob import glob
 from subprocess import CalledProcessError
 
 import polars as pl
+import psutil
 import xarray as xr
 from simlib.core.buoymodel import BuoyTrajectory
 from simlib.core.dataloader import load_ice_data
@@ -18,6 +19,17 @@ from simlib.tools.ffi_plot import ffi_plot
 from simlib.tools.logging import LogLevel, conf_file_logger, conf_interactive_logger
 from simlib.tools.utilities import DataExportType
 from tqdm import tqdm
+
+
+def get_resource_usage() -> dict:
+    parent = psutil.Process(os.getpid())
+    procs = [parent] + parent.children(recursive=True)
+
+    cpu_user = sum(p.cpu_times().user for p in procs if p.is_running())
+    cpu_sys = sum(p.cpu_times().system for p in procs if p.is_running())
+    mem_rss = sum(p.memory_info().rss for p in procs if p.is_running())
+
+    return {"cpu_user_s": cpu_user, "cpu_sys_s": cpu_sys, "mem_rss_mb": mem_rss / 1e6}
 
 
 def simulator_worker(
@@ -122,10 +134,19 @@ def run_simulation(args):
             colour="green",
         ):
             pass
+        stats = get_resource_usage()
 
     mainlog.info("Simulation complete. Processed %d items.", len(buoylist))
 
     end_time = time.perf_counter()
     diff = end_time - init_time
-    mainlog.info("Elapsed: %.2fm (%.2fs)", diff / 60, diff)
+    mainlog.info("Elapsed (Wall): %.2fm (%.2fs)", diff / 60, diff)
+    # in order: overall CPU use, parallelism efficiency, CPU sys, RAM.
+    mainlog.info(
+        "Resources: [CPU user: %.2fs (%.2fs) | CPU sys: %.2fs | Mem: %.1f MB]",
+        stats["cpu_user_s"],
+        stats["cpu_user_s"] / end_time,
+        stats["cpu_sys_s"],
+        stats["mem_rss_mb"],
+    )
     sys.exit(0)

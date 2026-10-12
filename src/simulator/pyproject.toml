@@ -5,6 +5,7 @@ description = "Lagrangian buoy simulator"
 dependencies = [
     "argcomplete>=3.7.2",
     "tqdm>=4.69.1",
+    "psutil>=7.2.2",
     "simlib",
 ]
 

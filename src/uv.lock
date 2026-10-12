@@ -1157,6 +1157,7 @@ version = "0.1.0"
 source = { editable = "simulator" }
 dependencies = [
     { name = "argcomplete" },
+    { name = "psutil" },
     { name = "simlib" },
     { name = "tqdm" },
 ]
@@ -1164,6 +1165,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "argcomplete", specifier = ">=3.7.2" },
+    { name = "psutil", specifier = ">=7.2.2" },
     { name = "simlib", editable = "simlib" },
     { name = "tqdm", specifier = ">=4.69.1" },
 ]
