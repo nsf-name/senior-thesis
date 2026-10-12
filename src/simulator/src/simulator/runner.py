@@ -2,10 +2,10 @@ import os
 import pathlib
 import sys
 import time
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from datetime import datetime
 from functools import partial
 from glob import glob
-from multiprocessing import Pool
 from subprocess import CalledProcessError
 
 import polars as pl
@@ -109,11 +109,14 @@ def run_simulation(args):
     )
 
     mainlog.info("Preparations complete. Started process pool. Executing...")
-    with Pool(processes=args.nproc) as pool:
-        # why not ProcessPoolExecutor()? because this is lazy, not eager.
-        results = pool.imap_unordered(partial_worker, buoylist, chunksize=1)
+    with ProcessPoolExecutor(max_workers=args.nproc) as executor:
+        # using futures reduces polling in tqdm()
+        futures = {executor.submit(partial_worker, job) for job in buoylist}
         for _ in tqdm(
-            results, total=len(buoylist), disable=args.verbose, colour="green"
+            as_completed(futures),
+            total=len(buoylist),
+            disable=args.verbose,
+            colour="green",
         ):
             pass
 
@@ -121,5 +124,5 @@ def run_simulation(args):
 
     end_time = time.perf_counter()
     diff = end_time - init_time
-    mainlog.info("Elapsed: %.2fsm (%.2fss)", diff / 60, diff)
+    mainlog.info("Elapsed: %.2fm (%.2fs)", diff / 60, diff)
     sys.exit(0)
