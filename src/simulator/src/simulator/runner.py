@@ -145,7 +145,7 @@ def run_simulation(args):
     mainlog.info(
         "Resources: [CPU user: %.2fs (%.2fs) | CPU sys: %.2fs | Mem: %.1f MB]",
         stats["cpu_user_s"],
-        stats["cpu_user_s"] / end_time,
+        stats["cpu_user_s"] / args.nproc,
         stats["cpu_sys_s"],
         stats["mem_rss_mb"],
     )
