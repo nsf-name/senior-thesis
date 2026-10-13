@@ -44,20 +44,16 @@ class Simulator:
         # get cleaned paths for each one
         buoylist = map(pathlib.Path, sorted(glob(str(self.buoydir) + "/*.csv")))
 
-        # TODO:
-        # conceptually, the runs aren't that bad. the buoys is just a glob over
-        # the files we were passed in. then the ice files are just loading netCDF.
-        # of course, what we need to do is just do buoys first. ice comes second.
-        # we also need to finish the plotter. do ice one at a time...
-
-        # now make a dictionary to hold all the runs
         self._sim_dict = {}
 
         for location in buoylist:
             name = location.name.rstrip(".csv")
             self._log.debug("Creating simulator for %s...", name)
-            data = pl.read_csv(location).with_columns(
-                pl.col("datetime").str.to_datetime(time_zone="UTC")
+            # cast to UTC, drop buggy positions as ID'd in cleaning
+            data = (
+                pl.read_csv(location)
+                .with_columns(pl.col("datetime").str.to_datetime(time_zone="UTC"))
+                .remove(flag=1)
             )
             self._sim_dict[name] = BuoyTrajectory(
                 id=name, dataframe=data, loglevel=self.loglevel

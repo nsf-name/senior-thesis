@@ -63,14 +63,15 @@ class Trajectory(ABC):
             case DataExportType.CSV:
                 try:
                     lats, lons = zip(*self.poslist)
-                    # TODO: export distlist
+                    # TODO: add distlist
+                    data = {
+                        "lat": list(lats),
+                        "lon": list(lons),
+                        "time": self.timelist,
+                        "id": self.id,
+                    }
                     pl.DataFrame(
-                        {
-                            "lat": list(lats),
-                            "lon": list(lons),
-                            "time": self.timelist,
-                            "id": self.id,
-                        },
+                        data,
                         orient="row",
                     ).write_csv(path)
                 except ValueError:
