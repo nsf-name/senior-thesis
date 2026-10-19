@@ -36,7 +36,7 @@ jobs:
       run: |
         uv run ruff format --check $(git ls-files '*.py')
 
-    - name: Lint root directory
+    - name: Linting (R)
       run: lintr::lint_dir()
       shell: Rscript {0}
       env:
