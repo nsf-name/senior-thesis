@@ -11,7 +11,9 @@ dev = [
     "ruff>=0.15.20",
 ]
 
-[tool.pylint.messages_control]
 # C0114: __init__.py docstrings
 # W0511: TODO/FIXME
-disable = ["C0114", "W0511"]
+# BLE001: blind exceptions
+[tool.pylint.messages_control]
+disable = ["C0114", "W0511", "BLE001"]
+

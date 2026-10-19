@@ -79,7 +79,7 @@ class Trajectory(ABC):
                     self._log.debug("Writeout as JSON complete.")
                     dframe.write_json(path)
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             self._log.exception("ERROR: %s", e)
 
     # TODO: complete this

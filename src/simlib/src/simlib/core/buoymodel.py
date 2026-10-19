@@ -1,7 +1,5 @@
 from dataclasses import dataclass
-from datetime import datetime
 from itertools import chain
-from typing import cast
 
 import polars as pl
 from haversine import Unit, haversine_vector
