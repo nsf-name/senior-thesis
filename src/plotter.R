@@ -18,7 +18,6 @@ optional_layer <- function(data, ...) {
     list()
 }
 
-
 # parse command-line options
 option_list <- list(
   make_option(c("-i", "--input"), type="character",
@@ -45,7 +44,10 @@ buoy_result <- tryCatch({
     headtail = buoy_sf[c(1, nrow(buoy_sf)), ] |> mutate(position = c("Start", "End")),
     line     = st_combine(buoy_sf) |> st_cast("LINESTRING")
   )
-}, error = function(e) NULL)
+}, error = function(e) {
+  message("Warning: could not load buoy data: ", e$message)
+  NULL
+})
 
 # now read in the cooresponding ice simulation
 ice_result <- tryCatch({
@@ -56,7 +58,10 @@ ice_result <- tryCatch({
     headtail = ice_sf[c(1, nrow(ice_sf)), ] |> mutate(position = c("Start", "End")),
     line     = st_combine(ice_sf) |> st_cast("LINESTRING")
   )
-}, error = function(e) NULL)
+}, error = function(e) {
+  message("Warning: could not load ice data: ", e$message)
+  NULL
+})
 
 # load critical data from somewhere. tidyverse null-coalescing.
 meta_source <- buoy_result$data %||% ice_result$data
