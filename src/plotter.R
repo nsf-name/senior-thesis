@@ -1,65 +1,66 @@
 ### plotter.R
 ## DATA PROCESSING
 # load all required libraries
-library(rlang)
-library(dplyr)
-library(sf)
-library(ggplot2)
-library(ggspatial)
-library(rnaturalearth)
-library(rnaturalearthdata)
-library(optparse)
-
-# function definition we will use a lot later.
-optional_layer <- function(data, ...) {
-  if (!is.null(data))
-    list(geom_sf(data = data, ...))
-  else
-    list()
-}
+suppressPackageStartupMessages({
+  library(rlang)
+  library(dplyr)
+  library(sf)
+  library(ggplot2)
+  library(ggspatial)
+  library(rnaturalearth)
+  library(rnaturalearthdata)
+  library(optparse)
+})
 
 # parse command-line options
 option_list <- list(
-  make_option(c("-i", "--input"), type="character",
-              help="input path", required=TRUE),
-  make_option(c("-f", "--file"), type="character",
-              help="simulator name", required=TRUE),
-  make_option(c("-o", "--output"), type="character",
-              help="output path", required=TRUE),
-  make_option(c("-h", "--height"), type="integer",
-              help="height of saved image", default=8),
-  make_option(c("-w", "--width"), type="integer",
-              help="width of saved image", default=8)
+  make_option(c("-i", "--input"), type = "character",
+              help = "input path", required = TRUE),
+  make_option(c("-f", "--file"), type = "character",
+              help = "simulator name", required = TRUE),
+  make_option(c("-o", "--output"), type = "character",
+              help = "output path", required = TRUE),
+  make_option(c("-h", "--height"), type = "integer",
+              help = "height of saved image", default = 8),
+  make_option(c("-w", "--width"), type = "integer",
+              help = "width of saved image", default = 8)
 )
 # our -h conflicts with that of the default help option
-opt <- parse_args(OptionParser(option_list=option_list,
-                               add_help_option=FALSE))
+opt <- parse_args(OptionParser(option_list = option_list,
+                               add_help_option = FALSE))
 
+cat("\033[32m[INFO]\033[0m Loading data for plotting... \n")
 # read in the buoy simulation
 buoy_result <- tryCatch({
-  buoy <- read.csv(paste(opt$input, sprintf("%s-BuoyTrajectory.csv", opt$file), sep=""))
-  buoy_sf <- st_as_sf(buoy, coords=c("lon", "lat"), crs=4326)
+  buoy <- read.csv(
+    paste(opt$input, sprintf("%s-BuoyTrajectory.csv", opt$file), sep = "")
+  )
+  buoy_sf <- st_as_sf(buoy, coords = c("lon", "lat"), crs = 4326)
   list(
     data = buoy,
-    headtail = buoy_sf[c(1, nrow(buoy_sf)), ] |> mutate(position = c("Start", "End")),
+    headtail = buoy_sf[c(1, nrow(buoy_sf)), ] |>
+      mutate(position = c("Start", "End")),
     line     = st_combine(buoy_sf) |> st_cast("LINESTRING")
   )
 }, error = function(e) {
-  message("Warning: could not load buoy data: ", e$message)
+  message("\033[33m[WARN]\033[0m cannot load buoy data: ", e$message)
   NULL
 })
 
 # now read in the cooresponding ice simulation
 ice_result <- tryCatch({
-  ice <- read.csv(paste(opt$input, sprintf("%s-IceTrajectory.csv", opt$file), sep=""))
-  ice_sf <- st_as_sf(ice, coords=c("lon", "lat"), crs=4326)
+  ice <- read.csv(
+    paste(opt$input, sprintf("%s-IceTrajectory.csv", opt$file), sep = "")
+  )
+  ice_sf <- st_as_sf(ice, coords = c("lon", "lat"), crs = 4326)
   list(
     data = ice,
-    headtail = ice_sf[c(1, nrow(ice_sf)), ] |> mutate(position = c("Start", "End")),
+    headtail = ice_sf[c(1, nrow(ice_sf)), ] |>
+      mutate(position = c("Start", "End")),
     line     = st_combine(ice_sf) |> st_cast("LINESTRING")
   )
 }, error = function(e) {
-  message("Warning: could not load ice data: ", e$message)
+  message("\033[33m[WARN]\033[0m cannot load ice data: ", e$message)
   NULL
 })
 
@@ -69,6 +70,7 @@ name       <- meta_source[1, ]$id
 start_time <- meta_source[1, ]$time
 end_time   <- meta_source[nrow(meta_source), ]$time
 
+cat("\033[32m[INFO]\033[0m Loading is now complete. Plotting... \n")
 ## PLOTTING
 # load a basic theme and prepare natural earth data.
 theme_set(theme_bw())
@@ -82,18 +84,28 @@ disp_win <- st_sfc(
   crs = 4326
 )
 # transform into the correct coordinate reference system (Arctic-centered).
-disp_win_trans <- st_transform(disp_win, crs=st_crs(3408))
+disp_win_trans <- st_transform(disp_win, crs = st_crs(3408))
 disp_win_coord <- st_coordinates(disp_win_trans)
+
+# function definition for wrapping optionals
+optional_layer <- function(data, ...) {
+  if (!is.null(data))
+    list(geom_sf(data = data, ...))
+  else
+    list()
+}
 
 # render the plot.
 ggplot(data = world) +
   geom_sf() +
-  # buoys are red, ice is blue,
-  # is this code bug free? I feel negatively about that too.
-  optional_layer(data = buoy_result$line,     aes(color = "Buoy Path"),     linewidth = 0.8) +
-  optional_layer(data = ice_result$line,      aes(color = "Ice Vectors"),   linewidth = 0.8) +
-  optional_layer(data = buoy_result$headtail, aes(color = position),        size = 2) +
-  optional_layer(data = ice_result$headtail,  aes(color = position),        size = 2) +
+  optional_layer(data = buoy_result$line,
+                 aes(color = "Buoy Path"), linewidth = 0.8) +
+  optional_layer(data = ice_result$line,
+                 aes(color = "Ice Vectors"), linewidth = 0.8) +
+  optional_layer(data = buoy_result$headtail,
+                 aes(color = position), size = 2) +
+  optional_layer(data = ice_result$headtail,
+                 aes(color = position), size = 2) +
   scale_color_manual(
     name   = "Legend",
     values = c(
@@ -116,6 +128,8 @@ ggplot(data = world) +
   ) +
   theme(panel.background = element_rect(fill = "aliceblue"))
 
+cat("\033[32m[INFO]\033[0m Plotting complete. Writing... \n")
 # save to user-specified path.
 ggsave(sprintf("%s/%s.png", opt$output, opt$file),
        width = opt$width, height = opt$height, dpi = 600)
+cat("\033[32m[INFO]\033[0m Written successfully. Complete! \n")

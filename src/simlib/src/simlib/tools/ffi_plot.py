@@ -40,7 +40,7 @@ def r_plot_marimo(inpath: Path, inid: str) -> mo.Html:
             check=True,
         )
         # this is a grotesque hack but should work for now
-        return mo.image(open((tmp + ("/" + id + ".png")), "rb").read())
+        return mo.image(open((tmp + ("/" + str(id) + ".png")), "rb").read())
 
 
 def r_ffi(script: str, *args: str):
@@ -53,18 +53,32 @@ def r_ffi(script: str, *args: str):
     )
 
 
-# TODO: make dims do something useful
 def ffi_plot(
     inpath: Path, inid: str, output: Path, dims: tuple[int, int] | None = None
 ):
-    """Makes a plot with R of both simulator's work."""
+    """Makes a plot with R of some simulation."""
     # trailing slashes are required in R but not in Python.
-    r_ffi(
-        "plotter.R",
-        "--input",
-        str(inpath) + "/",
-        "--file",
-        inid,
-        "--output",
-        str(output) + "/",
-    )
+    if dims is not None:
+        r_ffi(
+            "plotter.R",
+            "--input",
+            str(inpath) + "/",
+            "--file",
+            inid,
+            "--output",
+            str(output) + "/",
+            "--height",
+            str(dims[0]),
+            "--width",
+            str(dims[1]),
+        )
+    else:
+        r_ffi(
+            "plotter.R",
+            "--input",
+            str(inpath) + "/",
+            "--file",
+            inid,
+            "--output",
+            str(output) + "/",
+        )
