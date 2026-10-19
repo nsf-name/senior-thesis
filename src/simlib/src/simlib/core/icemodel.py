@@ -186,14 +186,18 @@ class IceTrajectory(Trajectory):
             self._log.info("Message: %s", msg)
 
         try:
+            self._log.debug("Starting haversine...")
             xv, yv = self.pos_list[:-1], self.pos_list[1:]
             self.dist_list = haversine_vector(xv, yv, unit=Unit.KILOMETERS)
+            self._log.info("%s, %s", len(self.dist_list), len(self.pos_list))
+            self._log.debug("Haversine complete.")
         except ValueError:
             self._log.warning("ERROR: haversine failed due to simulator also failing!")
         except IndexError:
             self._log.warning("ERROR: haversine failed due to simulator also failing!")
 
         self._is_consumed = True
+        self._log.debug("Simulator is consumed!")
         raise StopIteration
 
     def _kill_iter(self, err: str):

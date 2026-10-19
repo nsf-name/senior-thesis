@@ -53,14 +53,15 @@ class BuoyTrajectory(Trajectory):
     def _setup(self):
         self.pos_list = self.dataframe.select(["lat", "lon"]).rows()
         self.date_list = list(
-            chain.from_iterable(
-                cast(list[datetime], self.dataframe.select("datetime").rows())
-            )
+            chain.from_iterable(self.dataframe.select("datetime").rows())
         )
         array = self.dataframe.select(["lat", "lon"]).to_numpy()
         try:
+            self._log.debug("Starting haversine...")
             xv, yv = array[:-1], array[1:]
             self.dist_list = haversine_vector(xv, yv, unit=Unit.KILOMETERS)
+            self._log.info("%s, %s", len(self.dist_list), len(self.pos_list))
+            self._log.debug("Haversine complete.")
         except ValueError:
             self._log.warning("ERROR: haversine failed due to simulator also failing!")
         except IndexError:

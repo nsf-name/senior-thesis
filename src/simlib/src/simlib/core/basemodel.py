@@ -59,25 +59,28 @@ class Trajectory(ABC):
 
     def export(self, dtype: DataExportType, path: Path):
         """Export the simulator data to the specified type."""
-        match dtype:
-            case DataExportType.CSV:
-                try:
-                    lats, lons = zip(*self.poslist)
-                    # TODO: add distlist
-                    data = {
-                        "lat": list(lats),
-                        "lon": list(lons),
-                        "time": self.timelist,
-                        "id": self.id,
-                    }
-                    pl.DataFrame(
-                        data,
-                        orient="row",
-                    ).write_csv(path)
-                except ValueError:
-                    self._log.exception("not enough values to export")
-            case DataExportType.NETCDF:
-                raise NotImplementedError
+        try:
+            self._log.debug("Starting export...")
+            lats, lons = zip(*self.poslist)
+            data = {
+                "lat": list(lats),
+                "lon": list(lons),
+                "time": self.timelist,
+                "dist": [0.0] + self.distlist,
+                "id": [self.id] * len(self.timelist),
+            }
+            dframe = pl.DataFrame(data, orient="row")
+            self._log.debug("Export dataframe successfully created.")
+            match dtype:
+                case DataExportType.CSV:
+                    self._log.debug("Writeout as CSV complete.")
+                    dframe.write_csv(path)
+                case DataExportType.JSON:
+                    self._log.debug("Writeout as JSON complete.")
+                    dframe.write_json(path)
+
+        except Exception as e:
+            self._log.exception("ERROR: %s", e)
 
     # TODO: complete this
     def plot(self):
@@ -112,7 +115,7 @@ class Trajectory(ABC):
         """Returns a list of distances (in meters) between pairs of positions."""
         if not self.consumed:
             raise UnfinishedSimulatorError("Simulator must be consumed first")
-        return self.dist_list
+        return list(self.dist_list)
 
     @property
     def poshead(self) -> tuple[float, float]:

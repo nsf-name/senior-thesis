@@ -12,8 +12,7 @@ class DataExportType(Enum):
     """Valid simulator data export types."""
 
     CSV = auto()
-    # TODO: go back and implement later, might be useful
-    NETCDF = auto()
+    JSON = auto()
 
 
 class UnpreparedSimulatorError(Exception):
