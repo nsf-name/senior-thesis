@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import numpy as np
 import pandas as pd
@@ -52,7 +52,7 @@ class IceTrajectory(Trajectory):
 
         if self.end_day is None:
             # the ice vector dataset is undefined past this point
-            self.end_day = datetime(2025, 1, 1, tzinfo=timezone.utc)
+            self.end_day = datetime(2025, 1, 1, tzinfo=UTC)
 
         # clean up typing since they're internally raw Unix time
         if not isinstance(self.end_day, datetime):
@@ -89,7 +89,7 @@ class IceTrajectory(Trajectory):
         if self.consumed:
             raise StopIteration
         # our vector dataset contains no entries beyond this.
-        if self._t >= datetime(2025, 1, 1, tzinfo=timezone.utc):
+        if self._t >= datetime(2025, 1, 1, tzinfo=UTC):
             self._kill_iter("Impossible starting date.")
         # don't iter beyond our last date, but do include it
         if (self.end_day is not None) and (self._t > self.end_day):
