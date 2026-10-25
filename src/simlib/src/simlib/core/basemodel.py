@@ -66,9 +66,11 @@ class Trajectory(ABC):
                 "lat": list(lats),
                 "lon": list(lons),
                 "time": self.timelist,
-                "dist": [0.0] + self.distlist,
                 "id": [self.id] * len(self.timelist),
             }
+            # only add distance if we have enough entries in general
+            if len(self.distlist) + 1 == max(len(lats), len(lons)):
+                data["dist"] = [0.0] + self.distlist
             dframe = pl.DataFrame(data, orient="row")
             self._log.debug("Export dataframe successfully created.")
             match dtype:
