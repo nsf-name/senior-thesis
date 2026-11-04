@@ -20,6 +20,42 @@ from simlib.tools.logging import LogLevel, conf_file_logger, conf_interactive_lo
 from simlib.tools.utilities import DataExportType
 from tqdm import tqdm
 
+from haversine import Unit, haversine_vector
+
+
+def score_plot(
+    iceframe: pl.DataFrame, buoyframe: pl.DataFrame, every: str = "7d"
+) -> pl.DataFrame:
+    """Make a plot of the score between the two dataframes."""
+    # TODO: handle time deltas automatically
+
+    start, end = iceframe["time"].min(), iceframe["time"].max()
+    buoyframe = (
+        buoyframe.filter(pl.col("time").is_between(start, end))
+        .group_by_dynamic("time", every=every, start_by="datapoint")
+        .agg(
+            pl.col("lat").median(),
+            pl.col("lon").median(),
+        )
+        .with_columns(pl.col("time").dt.truncate(every))
+        .rename({"lat": "buoylat", "lon": "buoylon"})
+    )
+    iceframe = iceframe.with_columns(pl.col("time").dt.truncate(every)).rename(
+        {"lat": "icelat", "lon": "icelon"}
+    )
+
+    merger = buoyframe.join(iceframe, on=["time"], how="inner").drop(["dist", "id"])
+    buoylist = list(zip(merger["buoylat"].to_list(), merger["buoylon"].to_list()))
+    icelist = list(zip(merger["icelat"].to_list(), merger["icelon"].to_list()))
+    return merger.select(
+        [
+            "time",
+            pl.Series(
+                "distances", haversine_vector(buoylist, icelist, unit=Unit.KILOMETERS)
+            ),
+        ]
+    )
+
 
 def get_resource_usage() -> dict:
     parent = psutil.Process(os.getpid())
@@ -43,6 +79,7 @@ def simulator_worker(
     name = buoy_path.name.rstrip(".csv")
     log = conf_file_logger(name, write_path / (name + ".log"), LogLevel.DEBUG)
     log.info("Preparing: %s", name)
+    # Clean up that dataset by removing known-buggy data. TODO put this in later
     data = pl.read_csv(buoy_path).with_columns(
         pl.col("datetime").str.to_datetime(time_zone="UTC")
     )
@@ -53,7 +90,7 @@ def simulator_worker(
         loglevel=log_level,
     )
     log.info("Done with loading and preparations. Executing %s...", buoy.filename)
-    buoy.export(DataExportType.CSV, write_path / (buoy.filename + ".csv"))
+    buoyframe = buoy.export(DataExportType.CSV, write_path / (buoy.filename + ".csv"))
     log.info("Done exporting buoy, now executing ice simulator...")
     ice = IceTrajectory(
         id=name,
@@ -66,11 +103,20 @@ def simulator_worker(
     )
     ice.runsim()
     log.info("Done running %s. Now exporting...", ice.filename)
-    ice.export(DataExportType.CSV, write_path / (ice.filename + ".csv"))
+    iceframe = ice.export(DataExportType.CSV, write_path / (ice.filename + ".csv"))
     log.info("Done executing %s.", name)
-    log.info("Making a plot for both simulators for %s...", name)
+    log.info("Now making distance scores...")
     try:
-        ffi_plot(write_path, name, write_path)
+        # TODO: need to manually edit this every time
+        dist = score_plot(iceframe, buoyframe, "7d")
+        dist.write_csv(write_path / f"{name}-InterSimDist.csv")
+    except Exception as e:
+        log.error("Distance plot failed with error %s", e)
+    log.info("Done exporting distance scores.")
+    log.info("Making plots for both simulators for %s...", name)
+    try:
+        ffi_plot("plotter.R", write_path, name, write_path)
+        ffi_plot("distance.R", write_path, name, write_path)
     except CalledProcessError as err:
         log.error("R FFI plot failed with error %s", err)
     log.info("Done plotting %s.", name)

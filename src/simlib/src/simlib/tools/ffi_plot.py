@@ -1,23 +1,8 @@
+from pathlib import Path
 import subprocess
 import tempfile
-from pathlib import Path
 
 import marimo as mo
-
-# from simlib.core import BuoyTrajectory, IceTrajectory
-
-
-# TODO: bundle our script within our application
-# also, to do plots on objects... that should be our next goal
-# take in TWO sims and return a plot for both.
-# def quickplot(
-#     ice: IceTrajectory,
-#     buoy: BuoyTrajectory,
-#     output: Path | None = None,
-#     dims: tuple[int, int] | None = None,
-# ):
-#     """Render a plot to marimo's output."""
-#     pass
 
 
 def r_plot_marimo(inpath: Path, inid: str) -> mo.Html:
@@ -54,13 +39,17 @@ def r_ffi(script: str, *args: str):
 
 
 def ffi_plot(
-    inpath: Path, inid: str, output: Path, dims: tuple[int, int] | None = None
+    function: str,
+    inpath: Path,
+    inid: str,
+    output: Path,
+    dims: tuple[int, int] | None = None,
 ):
-    """Makes a plot with R of some simulation."""
+    """Makes a plot with R of some data."""
     # trailing slashes are required in R but not in Python.
     if dims is not None:
         r_ffi(
-            "plotter.R",
+            function,
             "--input",
             str(inpath) + "/",
             "--file",
@@ -74,7 +63,7 @@ def ffi_plot(
         )
     else:
         r_ffi(
-            "plotter.R",
+            function,
             "--input",
             str(inpath) + "/",
             "--file",

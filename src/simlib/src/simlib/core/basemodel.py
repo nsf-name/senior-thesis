@@ -57,8 +57,9 @@ class Trajectory(ABC):
     @abstractmethod
     def __len__(self) -> int: ...
 
-    def export(self, dtype: DataExportType, path: Path):
-        """Export the simulator data to the specified type."""
+    def export(self, dtype: DataExportType, path: Path) -> pl.DataFrame:  # type: ignore
+        """Export the simulator data to the specified type; returns a dataframe."""
+        # TODO: if dtype is DFRAME, just return immediately, don't require a path.
         try:
             self._log.debug("Starting export...")
             lats, lons = zip(*self.poslist)
@@ -80,6 +81,7 @@ class Trajectory(ABC):
                 case DataExportType.JSON:
                     self._log.debug("Writeout as JSON complete.")
                     dframe.write_json(path)
+            return dframe
 
         except Exception as e:  # noqa: BLE001
             self._log.exception("ERROR: %s", e)
