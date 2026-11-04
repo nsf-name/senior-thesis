@@ -12,6 +12,7 @@ from subprocess import CalledProcessError
 import polars as pl
 import psutil
 import xarray as xr
+from haversine import Unit, haversine_vector
 from simlib.core.buoymodel import BuoyTrajectory
 from simlib.core.dataloader import load_ice_data
 from simlib.core.icemodel import IceTrajectory
@@ -19,8 +20,6 @@ from simlib.tools.ffi_plot import ffi_plot
 from simlib.tools.logging import LogLevel, conf_file_logger, conf_interactive_logger
 from simlib.tools.utilities import DataExportType
 from tqdm import tqdm
-
-from haversine import Unit, haversine_vector
 
 
 def score_plot(
@@ -110,7 +109,7 @@ def simulator_worker(
         # TODO: need to manually edit this every time
         dist = score_plot(iceframe, buoyframe, "7d")
         dist.write_csv(write_path / f"{name}-InterSimDist.csv")
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         log.error("Distance plot failed with error %s", e)
     log.info("Done exporting distance scores.")
     log.info("Making plots for both simulators for %s...", name)
