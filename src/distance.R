@@ -31,6 +31,7 @@ df <- read.csv(
 )
 df$time <- as.Date(df$time)
 cat("\033[32m[INFO]\033[0m Loading is now complete. Plotting... \n")
+
 ## PLOTTING
 fit <- lm(distances ~ time, data = df)
 r2 <- summary(fit)$r.squared

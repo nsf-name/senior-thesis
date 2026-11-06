@@ -23,7 +23,7 @@ from tqdm import tqdm
 
 
 def score_plot(
-    iceframe: pl.DataFrame, buoyframe: pl.DataFrame, every: str = "7d"
+        iceframe: pl.DataFrame, buoyframe: pl.DataFrame, every: str = "7d"
 ) -> pl.DataFrame:
     """Make a plot of the score between the two dataframes."""
     # TODO: handle time deltas automatically
@@ -68,10 +68,10 @@ def get_resource_usage() -> dict:
 
 
 def simulator_worker(
-    buoy_path: pathlib.Path,
-    ice_data: xr.Dataset,
-    write_path: pathlib.Path,
-    log_level: LogLevel,
+        buoy_path: pathlib.Path,
+        ice_data: xr.Dataset,
+        write_path: pathlib.Path,
+        log_level: LogLevel,
 ):
     """Spawns a worker to run each buoy simulator."""
 
@@ -81,7 +81,7 @@ def simulator_worker(
     # Clean up that dataset by removing known-buggy data. TODO put this in later
     data = pl.read_csv(buoy_path).with_columns(
         pl.col("datetime").str.to_datetime(time_zone="UTC")
-    )
+    ).remove(flag=1)
     buoy = BuoyTrajectory(
         id=name,
         dataframe=data,
@@ -107,18 +107,19 @@ def simulator_worker(
     log.info("Now making distance scores...")
     try:
         # TODO: need to manually edit this every time
+        # we should really expose this in a more sensible way
         dist = score_plot(iceframe, buoyframe, "7d")
         dist.write_csv(write_path / f"{name}-InterSimDist.csv")
     except Exception as e:  # noqa: BLE001
         log.error("Distance plot failed with error %s", e)
-    log.info("Done exporting distance scores.")
-    log.info("Making plots for both simulators for %s...", name)
+        log.info("Done exporting distance scores.")
+        log.info("Making plots for both simulators for %s...", name)
     try:
         ffi_plot("plotter.R", write_path, name, write_path)
         ffi_plot("distance.R", write_path, name, write_path)
     except CalledProcessError as err:
         log.error("R FFI plot failed with error %s", err)
-    log.info("Done plotting %s.", name)
+        log.info("Done plotting %s.", name)
 
 
 def create_simpaths(outdir: pathlib.Path, append: str) -> pathlib.Path:
@@ -173,10 +174,10 @@ def run_simulation(args):
     with ProcessPoolExecutor(max_workers=args.nproc) as executor:
         futures = {executor.submit(partial_worker, job) for job in buoylist}
         for _ in tqdm(
-            as_completed(futures),
-            total=len(buoylist),
-            disable=args.verbose,
-            colour="green",
+                as_completed(futures),
+                total=len(buoylist),
+                disable=args.verbose,
+                colour="green",
         ):
             pass
         stats = get_resource_usage()
