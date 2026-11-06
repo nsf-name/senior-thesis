@@ -23,7 +23,7 @@ from tqdm import tqdm
 
 
 def score_plot(
-        iceframe: pl.DataFrame, buoyframe: pl.DataFrame, every: str = "7d"
+    iceframe: pl.DataFrame, buoyframe: pl.DataFrame, every: str = "7d"
 ) -> pl.DataFrame:
     """Make a plot of the score between the two dataframes."""
     # TODO: handle time deltas automatically
@@ -68,10 +68,10 @@ def get_resource_usage() -> dict:
 
 
 def simulator_worker(
-        buoy_path: pathlib.Path,
-        ice_data: xr.Dataset,
-        write_path: pathlib.Path,
-        log_level: LogLevel,
+    buoy_path: pathlib.Path,
+    ice_data: xr.Dataset,
+    write_path: pathlib.Path,
+    log_level: LogLevel,
 ):
     """Spawns a worker to run each buoy simulator."""
 
@@ -79,9 +79,11 @@ def simulator_worker(
     log = conf_file_logger(name, write_path / (name + ".log"), LogLevel.DEBUG)
     log.info("Preparing: %s", name)
     # Clean up that dataset by removing known-buggy data. TODO put this in later
-    data = pl.read_csv(buoy_path).with_columns(
-        pl.col("datetime").str.to_datetime(time_zone="UTC")
-    ).remove(flag=1)
+    data = (
+        pl.read_csv(buoy_path)
+        .with_columns(pl.col("datetime").str.to_datetime(time_zone="UTC"))
+        .remove(flag=1)
+    )
     buoy = BuoyTrajectory(
         id=name,
         dataframe=data,
@@ -174,10 +176,10 @@ def run_simulation(args):
     with ProcessPoolExecutor(max_workers=args.nproc) as executor:
         futures = {executor.submit(partial_worker, job) for job in buoylist}
         for _ in tqdm(
-                as_completed(futures),
-                total=len(buoylist),
-                disable=args.verbose,
-                colour="green",
+            as_completed(futures),
+            total=len(buoylist),
+            disable=args.verbose,
+            colour="green",
         ):
             pass
         stats = get_resource_usage()
